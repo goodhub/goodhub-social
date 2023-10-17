@@ -1,22 +1,21 @@
 /* eslint-disable react-refresh/only-export-components */
 import { FC } from 'react';
 import { FiSettings, FiWind } from 'react-icons/fi';
-import { Container } from '../../components';
 import { ApplicationConfig, useApplication } from '../utils';
 
 const Example: FC = () => {
   const { user, client } = useApplication('example');
-  const { data } = client.example.info.useQuery({ userId: user.id });
+  const [info] = client.example.info.useSuspenseQuery({ userId: user.id });
 
   const echo = client.example.echo.useMutation();
 
   return (
     <div className="flex flex-col gap-3">
       <h1 className="text-3xl font-semibold">Example</h1>
-      <Container className="p-6 flex flex-col justify-center gap-4">
-        <p>{data?.description}</p>
+      <div className="p-6 flex flex-col justify-center gap-4">
+        <p>{info.description}</p>
         <button onClick={() => echo.mutate({ message: 'Hello world!' })}>Echo</button>
-      </Container>
+      </div>
     </div>
   );
 };

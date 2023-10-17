@@ -1,8 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
+import { Button } from '@/components/ui/button';
 import { FC } from 'react';
 import { useForm } from 'react-hook-form';
 import { FiGlobe, FiSettings } from 'react-icons/fi';
-import { Container, Title } from '../../components';
 import { ApplicationConfig, useApplication } from '../utils';
 
 interface WebsiteFormFields {
@@ -28,19 +28,19 @@ const Website: FC = () => {
   return (
     <div className="flex flex-col gap-4 text-gray-700">
       <div>
-        <Title Icon={FiGlobe}>Website</Title>
+        <h2>Website</h2>
         <p>Instead of paying and managing a complicated website</p>
       </div>
-      <Container className="p-6">
+      <div className="p-6">
         <h2 className="text-xl font-semibold">Website configuration</h2>
         <form className="flex flex-col gap-3 mt-4" onSubmit={handleSubmit(onSubmit)}>
           <div></div>
           <div></div>
-          <button type="submit" className="mt-4">
+          <Button type="submit" className="mt-4">
             Save
-          </button>
+          </Button>
         </form>
-      </Container>
+      </div>
     </div>
   );
 };

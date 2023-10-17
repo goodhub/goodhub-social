@@ -51,7 +51,8 @@ export default await App.setup('example', {
       info: anonymous.input(z.object({ userId: z.number() })).query(async ({ input }) => {
         const { userId } = input;
         const row = await Example.findByPk(userId);
-        return row?.toJSON();
+        if (!row) throw new Error('Not found');
+        return row.toJSON();
       }),
       echo: anonymous.input(z.object({ message: z.string() })).mutation(async ({ input }) => {
         const { message } = input;

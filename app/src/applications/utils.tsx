@@ -28,16 +28,7 @@ import { IconType } from 'react-icons';
 export const trpc = createTRPCReact<AppRouter>();
 
 export const TRPCProvider = () => {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            suspense: true
-          }
-        }
-      })
-  );
+  const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
