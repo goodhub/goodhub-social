@@ -21,7 +21,6 @@ export = async () => {
 
   return {
     groupName: group.name,
-    environmentDomain: environment.defaultDomain,
     ...ui,
     tag
   };
