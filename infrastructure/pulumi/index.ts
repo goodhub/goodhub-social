@@ -1,6 +1,14 @@
 import { ResourceGroup } from '@pulumi/azure-native/resources';
+import { Config, getProject, getStack } from '@pulumi/pulumi';
 
-export default async () => {
+const project = getProject();
+const stack = getStack();
+const id = `${project}-${stack}`;
+const simpleId = `${project.replace('-', '')}${stack}`;
+
+const config = new Config();
+
+export = async () => {
   const group = new ResourceGroup('social-dev');
 
   return {
