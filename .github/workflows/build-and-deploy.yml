@@ -88,15 +88,17 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: infrastructure/pulumi/package-lock.json
 
       - name: Install dependancies
         run: npm install
         working-directory: infrastructure/pulumi
 
-      - uses: pulumi/actions@v3
+      - uses: pulumi/actions@v4
         with:
           command: up
-          stack-name: social/dev
+          stack-name: dev
           work-dir: infrastructure/pulumi
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
