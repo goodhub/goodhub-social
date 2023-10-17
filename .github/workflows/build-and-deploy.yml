@@ -12,9 +12,6 @@ jobs:
     name: build api
     runs-on: ubuntu-22.04
 
-    outputs:
-      tags: ${{ steps.meta.outputs.tags }}
-
     permissions:
       contents: read
       packages: write
@@ -35,6 +32,8 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            suffix=-${{ github.run_id }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
