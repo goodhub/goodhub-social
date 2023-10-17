@@ -10,8 +10,10 @@ const config = new Config();
 
 export = async () => {
   const group = new ResourceGroup('social-dev');
+  const tag = config.get('api');
 
   return {
-    groupName: group.name
+    groupName: group.name,
+    tag
   };
 };
