@@ -10,7 +10,7 @@ env:
 jobs:
   build_api:
     name: build api
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
@@ -46,7 +46,7 @@ jobs:
 
   build_ui:
     name: build ui
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout repository
@@ -74,7 +74,7 @@ jobs:
 
   deploy:
     name: deploy to development
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     needs:
       - build_ui
       - build_api
