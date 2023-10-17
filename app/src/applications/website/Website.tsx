@@ -36,7 +36,7 @@ const Website: FC = () => {
         <form className="flex flex-col gap-3 mt-4" onSubmit={handleSubmit(onSubmit)}>
           <div></div>
           <div></div>
-          <Button type="submit" className="mt-4">
+          <Button variant="outline" type="submit" className="mt-4">
             Save
           </Button>
         </form>

@@ -3,6 +3,8 @@
   "include": ["../api"],
   "compilerOptions": {
     "outDir": "dist",
+    "rootDir": "src",
+
     "allowImportingTsExtensions": false,
     "noEmit": false
   }
