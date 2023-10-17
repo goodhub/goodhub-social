@@ -43,7 +43,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          
+
   build_ui:
     name: build ui
     runs-on: ubuntu-18.04
@@ -56,6 +56,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '20.x'
+          cache: 'npm'
 
       - name: Install dependancies
         run: npm ci
@@ -87,6 +88,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '20.x'
+          cache: 'npm'
 
       - name: Install dependancies
         run: npm ci
@@ -95,4 +97,3 @@ jobs:
       - name: Deploy
         run: echo "Deploy!"
         working-directory: infrastructure/pulumi
-      
