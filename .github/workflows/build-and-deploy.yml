@@ -84,6 +84,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - uses: actions/download-artifact@v3
+        with:
+          name: ui-build
+          path: ui
+
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
@@ -96,13 +101,14 @@ jobs:
         working-directory: infrastructure/pulumi
 
       - uses: pulumi/actions@v4
+        id: pulumi
         with:
           command: up
           stack-name: dev
           work-dir: infrastructure/pulumi
           config-map: |
             {
-              "api": { value: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.run_id }}", secret: false },
+              "api-image": { value: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.run_id }}", secret: false },
             }
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
@@ -110,3 +116,22 @@ jobs:
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+      - name: az cli login
+        uses: azure/login@v1
+        with:
+          creds: '{"resourceManagementEndpointUrl": "https://management.azure.com/", "tenantId": "${{ secrets.ARM_TENANT_ID }}", "clientId": "${{ secrets.ARM_CLIENT_ID }}", "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}", "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}"}'
+
+      - name: az cli copy
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az config set extension.use_dynamic_install=yes_without_prompt
+            az storage azcopy blob upload --container \$web --source "./ui/*" --account-name ${{ steps.pulumi.outputs.outputs.accountName }} --recursive
+            az cdn endpoint purge --resource-group ${{ steps.pulumi.outputs.outputs.resourceGroupName }} --name ${{ steps.pulumi.outputs.outputs.endpointName }} --profile-name ${{ steps.pulumi.outputs.outputs.profileName }} --content-paths "/*"
+        env:
+          accountName: ${{ steps.pulumi.outputs.outputs.accountName }}
+          resourceGroupName: ${{ steps.pulumi.outputs.outputs.resourceGroupName }}
+          endpointName: ${{ steps.pulumi.outputs.outputs.endpointName }}
+          profileName: ${{ steps.pulumi.outputs.outputs.profileName }}

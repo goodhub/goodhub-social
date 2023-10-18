@@ -1,7 +1,7 @@
 import { ResourceGroup } from '@pulumi/azure-native/resources';
-import { Config, getProject, getStack } from '@pulumi/pulumi';
+import { Config, getProject, getStack, interpolate } from '@pulumi/pulumi';
 
-import { ManagedEnvironment } from '@pulumi/azure-native/app';
+import { ContainerApp, ManagedEnvironment } from '@pulumi/azure-native/app';
 import { GetSharedKeysResult } from '@pulumi/azure-native/operationalinsights';
 import setupInsights from './resources/insights';
 import setupUI from './resources/ui';
@@ -15,7 +15,7 @@ const config = new Config();
 
 export = async () => {
   const group = new ResourceGroup('social-dev');
-  const tag = config.get('api');
+  const image = config.get('api-image');
 
   const { workspace, workspaceSharedKeys, appInsights } = await setupInsights(id, group);
   const environment = new ManagedEnvironment(`${id}-containerapps-env`, {
@@ -31,10 +31,53 @@ export = async () => {
 
   const ui = await setupUI(id, group);
 
+  const api = new ContainerApp(`${id}-api`, {
+    resourceGroupName: group.name,
+    managedEnvironmentId: environment.id,
+    configuration: {
+      ingress: {
+        external: true,
+        targetPort: 3000
+      }
+    },
+    template: {
+      containers: [
+        {
+          name: 'api',
+          image,
+          resources: {
+            cpu: 1,
+            memory: '2.0Gi'
+          },
+          env: [
+            {
+              name: 'PORT',
+              value: '3000'
+            }
+          ]
+        }
+      ],
+      scale: {
+        minReplicas: 0,
+        maxReplicas: 1,
+        rules: [
+          {
+            name: 'requests',
+            http: {
+              metadata: {
+                concurrentRequests: '100'
+              }
+            }
+          }
+        ]
+      }
+    }
+  });
+
   return {
-    groupName: group.name,
     environmentDomain: environment.defaultDomain,
+    apiUrl: interpolate`https://${api.name}.${environment.defaultDomain}`,
     ...ui,
-    tag
+    image
   };
 };
