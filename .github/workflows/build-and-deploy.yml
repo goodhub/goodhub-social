@@ -120,7 +120,7 @@ jobs:
       - name: az cli login
         uses: azure/login@v1
         with:
-          creds: '{"resourceManagementEndpointUrl": "https://management.azure.com/", "tenantId": "${{ secrets.ARM_TENANT_ID }}", "clientId": "${{ secrets.ARM_CLIENT_ID }}", "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}", "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}"}'
+          creds: '{"resourceManagerEndpointUrl": "https://management.azure.com/", "tenantId": "${{ secrets.ARM_TENANT_ID }}", "clientId": "${{ secrets.ARM_CLIENT_ID }}", "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}", "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}"}'
 
       - name: az cli copy
         uses: azure/CLI@v1
@@ -128,10 +128,5 @@ jobs:
           azcliversion: 2.53.0
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
-            az storage azcopy blob upload --container \$web --source "./ui/*" --account-name ${{ steps.pulumi.outputs.outputs.accountName }} --recursive
-            az cdn endpoint purge --resource-group ${{ steps.pulumi.outputs.outputs.resourceGroupName }} --name ${{ steps.pulumi.outputs.outputs.endpointName }} --profile-name ${{ steps.pulumi.outputs.outputs.profileName }} --content-paths "/*"
-        env:
-          accountName: ${{ steps.pulumi.outputs.outputs.accountName }}
-          resourceGroupName: ${{ steps.pulumi.outputs.outputs.resourceGroupName }}
-          endpointName: ${{ steps.pulumi.outputs.outputs.endpointName }}
-          profileName: ${{ steps.pulumi.outputs.outputs.profileName }}
+            az storage azcopy blob upload --container \$web --source "./ui/*" --account-name ${{ steps.pulumi.outputs.accountName }} --recursive
+            az cdn endpoint purge --resource-group ${{ steps.pulumi.outputs.resourceGroupName }} --name ${{ steps.pulumi.outputs.endpointName }} --profile-name ${{ steps.pulumi.outputs.profileName }} --content-paths "/*"
