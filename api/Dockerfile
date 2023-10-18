@@ -1,20 +1,10 @@
 FROM node:20 as builder
 
-WORKDIR /usr/builder
+WORKDIR /usr/api
 
-COPY ["package.json", "package-lock.json*", "tsconfig.json", "npm-shrinkwrap.json*", "./"]
+COPY ["package.json", "package-lock.json*", "tsconfig.json", "./"]
 RUN npm install
 COPY . .
 
 RUN npm run build
-
-FROM node:20 as production
-WORKDIR /usr/app
-COPY ["package.json", "package-lock.json*", "tsconfig.json", "npm-shrinkwrap.json*", "./"]
-RUN npm install --production && mv node_modules ../
-
-COPY --from=builder /usr/builder/dist .
-ENV PORT 3000
-EXPOSE 3000
-
-CMD ["node", "index.js"]
+CMD ["node", "dist/index.js"]
