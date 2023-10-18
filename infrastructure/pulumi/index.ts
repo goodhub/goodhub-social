@@ -31,6 +31,14 @@ export = async () => {
 
   const ui = await setupUI(id, group);
 
+  const env = {
+    PORT: '3000',
+    DATABASE_NAME: config.require('database-name'),
+    DATABASE_USER: config.require('database-user'),
+    DATABASE_PASSWORD: config.require('database-password'),
+    DATABASE_HOST: config.require('database-host')
+  };
+
   const api = new ContainerApp(`${id}-api`, {
     resourceGroupName: group.name,
     managedEnvironmentId: environment.id,
@@ -49,12 +57,7 @@ export = async () => {
             cpu: 1,
             memory: '2.0Gi'
           },
-          env: [
-            {
-              name: 'PORT',
-              value: '3000'
-            }
-          ]
+          env: Object.entries(env).map(([name, value]) => ({ name, value }))
         }
       ],
       scale: {

@@ -1,2 +1,8 @@
 config:
   azure-native:location: uksouth
+  social:database-host: aws.connect.psdb.cloud
+  social:database-name: goodhubsocial
+  social:database-password:
+    secure: AAABAM90smR90P0czeZTle6mWvFnPwhuPIz7OTs6AI1shUE84BYy2299yT3yA3xdW/mfJJwupBa3/RiSEf6nBwAafGlrDNRFXk+zzv5i1SQ3LkfVpw==
+  social:database-user:
+    secure: AAABAJ795IYqArp5oD3z6Oz+Q0yQOgMGOK8q3lEuTUypeMLk8BYKyrCHuMPwQJyhJvBoYA==
