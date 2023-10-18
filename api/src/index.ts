@@ -3,10 +3,10 @@ config();
 
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
-import { router } from './trpc';
+import { router } from './trpc.js';
 
-const { default: Example } = await import('./applications/example/Example');
-const { default: Website } = await import('./applications/website/Website');
+const { default: Example } = await import('./applications/example/Example.js');
+const { default: Website } = await import('./applications/website/Website.js');
 
 const routes = router({
   [Example.id]: Example.router,

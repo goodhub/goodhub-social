@@ -8,8 +8,8 @@ import {
   ModelAttributes
 } from 'sequelize';
 import { z } from 'zod';
-import { anonymous, router } from '../../trpc';
-import { App } from '../../utils/Application';
+import { anonymous, router } from '../../trpc.js';
+import { App } from '../../utils/Application.js';
 
 class Website extends Model<InferAttributes<Website>, InferCreationAttributes<Website>> {
   declare organisationId: number;
