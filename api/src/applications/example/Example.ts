@@ -43,7 +43,7 @@ export default await App.setup('example', {
   // Any tables that need to be created in the database
   tables: [Example],
   seed: async () => {
-    await Example.create({ description: `Stored in the database at ${new Date()}`, userId: 1 });
+    await Example.upsert({ description: `Stored in the database at ${new Date()}`, userId: 1 });
   },
   router: (env, cache) =>
     router({
@@ -57,6 +57,10 @@ export default await App.setup('example', {
       echo: anonymous.input(z.object({ message: z.string() })).mutation(async ({ input }) => {
         const { message } = input;
         return { message };
+      }),
+      color: anonymous.input(z.object({ userId: z.number(), shade: z.string() })).query(async ({ input }) => {
+        console.log(input.userId);
+        return { color: 'green' };
       })
     })
 });

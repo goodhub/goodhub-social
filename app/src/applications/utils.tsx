@@ -33,7 +33,7 @@ export const TRPCProvider = () => {
     trpc.createClient({
       links: [
         httpBatchLink({
-          url: 'https://social-dev-api4af0224d.ambitiousbeach-a2a4ff58.uksouth.azurecontainerapps.io',
+          url: 'http://localhost:3001',
           // You can pass any HTTP headers you wish here
           async headers() {
             return {

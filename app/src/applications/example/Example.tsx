@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import { FC } from 'react';
 import { FiSettings, FiWind } from 'react-icons/fi';
 import { ApplicationConfig, useApplication } from '../utils';
@@ -8,13 +7,14 @@ const Example: FC = () => {
   const [info] = client.example.info.useSuspenseQuery({ userId: user.id });
 
   const echo = client.example.echo.useMutation();
+  const [color] = client.example.color.useSuspenseQuery({ userId: user.id, shade: 'dark' });
 
   return (
     <div className="flex flex-col gap-3">
       <h1 className="text-3xl font-semibold">Example</h1>
       <div className="p-6 flex flex-col justify-center gap-4">
         <p>{info.description}</p>
-        <button onClick={() => echo.mutate({ message: 'Hello world!' })}>Echo</button>
+        <button onClick={() => echo.mutate({ message: 'Hello world!' })}>{color.color}</button>
       </div>
     </div>
   );
