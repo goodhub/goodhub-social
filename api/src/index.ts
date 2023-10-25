@@ -24,4 +24,5 @@ const port = Number(process.env.PORT);
 if (isNaN(port)) {
   throw new Error('PORT is not a number');
 }
+
 server.listen(port);
