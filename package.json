@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "install": "cd api && npm install && cd ../app && npm install",
+    "install": "npm install && cd api && npm install && cd ../app && npm install",
     "start": "npx concurrently \"cd api && npm start\" \"cd app && npm start\""
   },
   "author": "",
