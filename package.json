@@ -7,8 +7,12 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install": "cd api && npm install && cd ../app && npm install",
+    "start": "npx concurrently \"cd api && npm start\" \"cd app && npm start\""
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
 }
