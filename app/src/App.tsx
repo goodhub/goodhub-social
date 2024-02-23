@@ -1,11 +1,16 @@
 import { BrowserRouter, useRoutes } from 'react-router-dom';
-
-import example from './applications/example/Example';
 import { TRPCProvider } from './applications/utils';
-import website from './applications/website/Website';
 import { Frame } from './layout/Frame';
 
-const Applications = [example, website];
+import example from './applications/example/Example';
+import website from './applications/website/Website';
+import socialWizard from './applications/social/social-wizard';
+
+const Applications = [example, website, socialWizard];
+
+const Home = () => {
+  return <div>HOME!</div>
+}
 
 const ApplicationRouteManager = () => {
   const navigation = Applications.flatMap(app => app.navigation);
@@ -16,7 +21,12 @@ const ApplicationRouteManager = () => {
     {
       element: <TRPCProvider />,
       children: [
-        { path: '/', element: <Frame navigation={navigation} />, children: [{ children: dashboard }] },
+        { path: '/', element: <Frame navigation={navigation} />, children: [
+          { children: [
+            { index: true, element: <Home /> },
+            ...dashboard
+          ] }
+       ] },
         { children: standalone }
       ]
     }
