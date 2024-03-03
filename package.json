@@ -13,9 +13,12 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/sanitize-html": "^2.11.0",
     "concurrently": "^8.2.2"
   },
   "dependencies": {
+    "react-contenteditable": "^3.3.7",
+    "sanitize-html": "^2.12.1",
     "zustand": "^4.5.0"
   }
 }

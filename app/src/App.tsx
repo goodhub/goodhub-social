@@ -5,12 +5,10 @@ import { Frame } from './layout/Frame';
 import example from './applications/example/Example';
 import website from './applications/website/Website';
 import socialWizard from './applications/social/social-wizard';
+import Home from './applications/home'
+
 
 const Applications = [example, website, socialWizard];
-
-const Home = () => {
-  return <div>HOME!</div>
-}
 
 const ApplicationRouteManager = () => {
   const navigation = Applications.flatMap(app => app.navigation);

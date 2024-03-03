@@ -16,15 +16,29 @@ import { create } from 'zustand';
 import ImageSearchPage from './components/image-search-page';
 
 /* set up the stores for baseData*/
-type SocialWizardStore = {
+interface ImageStore {
   selectedImageId: string;
   selectedImageDescription: string;
   selectedImageURL: string;
+  preSelectedImageId: string;
+  preSelectedImageDescription: string;
+  preSelectedImageURL: string;
+  addNewImageToCollection: boolean;
+  query: string;
+  previousQuery: string;
+  photos: any[]; // Adjust the type according to your actual photo data structure
+  setQuery: (query: string) => void;
+  setPreviousQuery: (query: string) => void;
+  setPhotos: (photos: any[]) => void;
+  allUnsplash: boolean;
+  setAllUnsplash: (value: boolean) => void;
+  toggleAddNewImageToCollection: () => void;
   setSelectedImage: (selectedImageId:string, selectedImageDescription:string, selectedImageURL:string) => void;
+  setPreSelectedImage: (preSelectedImageId:string, preSelectedImageDescription:string, preSelectedImageURL:string) => void;
   removeSelectedImage: () => void;
 }
 
-export const useSocialWizardStore = create<SocialWizardStore>((set) => ({
+export const useImageStore = create<ImageStore>((set) => ({
   selectedImageURL: '',
   selectedImageId:'',
   selectedImageDescription:'',
@@ -34,12 +48,65 @@ export const useSocialWizardStore = create<SocialWizardStore>((set) => ({
       selectedImageId: imageId,
       selectedImageDescription: imageDescription,
     })),
+    preSelectedImageURL: '',
+    preSelectedImageId:'',
+    preSelectedImageDescription:'',
+    addNewImageToCollection: false,
+    toggleAddNewImageToCollection: () => set((state: ImageStore) => ({ addNewImageToCollection: !state.addNewImageToCollection })),
+    query: '',
+    previousQuery: '',
+    photos: [],
+    setQuery: (query) => set({ query }),
+    setPreviousQuery: (query) => set({ query }),
+    setPhotos: (photos) => set({ photos }),
+    allUnsplash: false,
+    setAllUnsplash: (value) => set({ allUnsplash: value }),
+    setPreSelectedImage : (imageId, imageDescription, imageURL) => 
+    set((state) => ({ 
+      preSelectedImageURL: imageURL,
+      preSelectedImageId: imageId,
+      preSelectedImageDescription: imageDescription,
+    })),
   removeSelectedImage: () => set({
     selectedImageURL: '',
     selectedImageId:'',
     selectedImageDescription:'',
   })
 }));
+
+interface KeyAndURLStore {
+  UNSPLASH_API_KEY: string;
+  UNSPLASH_URL_COLLECTION: string;
+  UNSPLASH_URL_ALL: string;
+  UNSPLASH_URL_ADD_TO_COLLECTION: string;
+  OPENAI_API_KEY: string;
+  OPENAI_CHATGPT_URL: string;
+}
+
+export const useKeyAndURLStore = create<KeyAndURLStore>((set) => ({
+  UNSPLASH_API_KEY: import.meta.env.VITE_UNSPLASH_KEY,
+  UNSPLASH_URL_COLLECTION: '', // Initialize as empty
+  UNSPLASH_URL_ALL: '', // Initialize as empty
+  UNSPLASH_URL_ADD_TO_COLLECTION: '', // Initialize as empty
+  OPENAI_API_KEY: import.meta.env.VITE_OPENAI_KEY,
+  OPENAI_CHATGPT_URL: 'https://api.openai.com/v1/completions',
+}));
+
+// Function to update the store with URLs using the API key
+export const setUnsplashURLs = (key: string) => {
+  const UNSPLASH_URL_COLLECTION = `https://api.unsplash.com/search/photos?client_id=${key}&collections=VoNV-LRp7EU&query=`;
+  const UNSPLASH_URL_ALL = `https://api.unsplash.com/search/photos?client_id=${key}&query=`;
+  const UNSPLASH_URL_ADD_TO_COLLECTION = `https://api.unsplash.com/collections/VoNV-LRp7EU/add`;
+
+  useKeyAndURLStore.setState({
+    UNSPLASH_URL_COLLECTION,
+    UNSPLASH_URL_ALL,
+    UNSPLASH_URL_ADD_TO_COLLECTION,
+  });
+};
+
+// Call setUnsplashURLs with the API key
+setUnsplashURLs(useKeyAndURLStore.getState().UNSPLASH_API_KEY);
 
 /* selected UI elements store */
 interface SelectedUIElementsStore {
@@ -86,12 +153,12 @@ export const useSelectedPartnersStore = create<SelectedPartnersStore>((set) => (
     }
   }),
   togglePartnerSelection: (partnerKey) => {
-      set((state) => ({
-          selectedPartners: state.selectedPartners.includes(partnerKey)
-              ? state.selectedPartners.filter((key) => key !== partnerKey)
-              : [...state.selectedPartners, partnerKey],
+    set((state) => ({
+      selectedPartners: state.selectedPartners.includes(partnerKey)
+          ? state.selectedPartners.filter((key) => key !== partnerKey)
+          : [...state.selectedPartners, partnerKey],
       }));
-  },
+    },
 }));
 
 interface SelectedSocialCompaniesStore {
@@ -112,32 +179,58 @@ export const useSelectedSocialCompaniesStore = create<SelectedSocialCompaniesSto
 
 // Define an interface representing the structure of your JSON data
 interface GPTData {
-  contact: string;
-  date: string;
-  image_search_word: string;
-  subtitle: string;
-  time: string;
-  title: string;
-  tweet: string;
-  venue: string;
+  contact?: string | null;
+  date?: string | null;
+  image_search_word?: string | null;
+  subtitle?: string | null;
+  time?: string | null;
+  title?: string | null;
+  tweet?: string | undefined;
+  venue?: string | null;
 }
 
 
 // Define a Zustand store to manage the JSON object
 interface JsonStoreState {
-  jsonData: GPTData | null; // Use the interface to type the state
-  setJsonData: (data: GPTData) => void;
+  jsonData: GPTData; // Use the interface to type the state
+  originalText: string;
+  setOriginalText: (text: string) => void;
+  setJsonData: (data: Partial<GPTData>) => void;
 }
 
 export const useJsonStore = create<JsonStoreState>((set) => ({
-  jsonData: null, // Initial state is null
-  setJsonData: (data:GPTData) => set({ jsonData: data }), // Setter function to update the JSON data
+  jsonData: {
+    contact: '',
+    date: '',
+    image_search_word: '',
+    subtitle: 'Subtitle in here, click to edit',
+    time: '',
+    title: 'Title in here!!',
+    tweet: '',
+    venue: '',
+  },
+  originalText: '',
+  setOriginalText: (originalText) => set({ originalText }),
+  setJsonData: (data: Partial<GPTData>) => {
+    // Merge the provided data with the current state data
+    set((state) => ({
+      jsonData: {
+        ...state.jsonData,
+        ...data,
+      },
+    }));
+  },
 }));
 
 
 const SocialWizard: FC = () => {
 
   const navigate = useNavigate()
+
+  //const PStore = useSelectedPartnersStore;
+
+  const imgStore = useImageStore();
+  const keyStore = useKeyAndURLStore();
 
   //   // State to track the current page index
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -183,6 +276,7 @@ const goToNextPage = () => {
   setCurrentPageIndex(prevIndex => {
       const newIndex = prevIndex + 1;
       if (newIndex < wizardPages.length) {
+          window.scrollTo(0, 0);
           return newIndex;
       } else {
         //send the post
@@ -197,6 +291,7 @@ const goToPreviousPage = () => {
   setCurrentPageIndex(prevIndex => {
       const newIndex = prevIndex - 1;
       if (newIndex >= 0) {
+        window.scrollTo(0, 0);
           return newIndex;
       } else {
         //go to home
@@ -204,6 +299,8 @@ const goToPreviousPage = () => {
       }
   });
 };
+
+
 
   // Use useEffect to perform route navigation after state update
   useEffect(() => {
@@ -214,6 +311,7 @@ const goToPreviousPage = () => {
 
   }, [currentPageIndex]); // Run this effect when currentPageIndex changes
 
+
   
     // Define your helper pages as an array of objects
     const helperPages = [
@@ -222,9 +320,13 @@ const goToPreviousPage = () => {
         content: 'Logo content',
         onCancelAction: () => {
           // clear down anything selected
+
+          //PStore.restoreSelectedPartners();
+          window.scrollTo(0, 0);
           setIsWizardMode(true)
         },
         onAction: () => {
+          window.scrollTo(0, 0);
           setIsWizardMode(true)
         },
         actionButtonText: 'Done', // Customize button text
@@ -235,10 +337,12 @@ const goToPreviousPage = () => {
         content: <PartnerList />,
         onCancelAction: () => {
           // clear down anything selected
-          setIsWizardMode(true)
+          window.scrollTo(0, 0);
+          setIsWizardMode(true);
         },
         onAction: () => {
             //   // State to track the current page index
+          window.scrollTo(0, 0);
           setIsWizardMode(true);
 
         },
@@ -250,10 +354,12 @@ const goToPreviousPage = () => {
         content: <SocialMediaCompanyList />,
         onCancelAction: () => {
           // clear down anything selected
-          setIsWizardMode(true)
+          window.scrollTo(0, 0);
+          setIsWizardMode(true);
         },
         onAction: () => {
             //   // State to track the current page index
+          window.scrollTo(0, 0);
           setIsWizardMode(true);
 
         },
@@ -261,16 +367,65 @@ const goToPreviousPage = () => {
         cancelButtonText: 'Cancel', // Customize button text
       },
       {
-        title: 'Search online for an image',
+        title: 'Search Unsplash for an image',
         content: <ImageSearchPage mode="unsplash" />,
         onCancelAction: () => {
           // clear down anything selected
-          setIsWizardMode(true)
+          window.scrollTo(0, 0);
+          setIsWizardMode(true);
         },
         onAction: () => {
             //   // State to track the current page index
+          window.scrollTo(0, 0);
           setIsWizardMode(true);
+          //
+          console.log('Add new image to unsplash - ' + imgStore.addNewImageToCollection + ' - photo_id: ' + imgStore.selectedImageId);
 
+          // Do this when we have write_collections scope from Unsplash
+
+          // if (imgStore.addNewImageToCollection) {
+          //   const handlePostData = async () => {
+          //     try {
+          //       // Define postData function inline
+          //       const postData = async () => {
+          //         try {
+          //           const UNSPLASH_URL_ADD_TO_COLLECTION = keyStore.UNSPLASH_URL_ADD_TO_COLLECTION;
+          //           const apiKey = keyStore.UNSPLASH_API_KEY;
+          //           const response = await fetch(UNSPLASH_URL_ADD_TO_COLLECTION, {
+          //             method: 'POST',
+          //             headers: {
+          //               'Authorization': `Client-ID ${apiKey}`,
+          //               'Content-Type': 'application/json',
+          //             },
+          //             body: JSON.stringify({
+          //               photo_id: imgStore.selectedImageId,
+          //               collection_id: 'VoNV-LRp7EU',
+          //             })
+          //           });
+          
+          //           if (!response.ok) {
+          //             throw new Error('Failed to post data');
+          //           }
+          
+          //           const responseData = await response.json(); // Parse response JSON
+          //           return responseData; // Return the response data
+          //         } catch (error) {
+          //           throw error; // Throw any errors that occur during the API call
+          //         }
+          //       };
+          
+          //       // Call postData function
+          //       const responseData = await postData();
+          //       console.log('Response:', responseData);
+          //       // Handle response data as needed
+          //     } catch (error) {
+          //       console.error('Error:', error);
+          //       // Handle errors
+          //     }
+          //   };
+          
+          //   handlePostData(); // Call handlePostData to initiate the process
+          // }
         },
         actionButtonText: 'Done', // Customize button text
         cancelButtonText: 'Cancel', // Customize button text
@@ -286,14 +441,15 @@ const goToPreviousPage = () => {
             <h1 className="text-xl md:text-2xl lg:text-3xl md:my-2 font-semibold">{currentPage?.title}</h1>
           </div>
           {/* calc a height for scrolling, may need to change based on viewport */}
-          <div id="component" className="overflow-y-auto" style={{maxHeight:'calc(100vh - 225px)'}}>
+          {/* <div id="component" className="overflow-y-auto" style={{maxHeight:'calc(100vh - 225px)'}}> */}
+          <div id="component">
 
               {/* change 'pages' here */}
               {currentPage?.content}
           </div> 
           <div id="buttonFooter" className='flex w-full justify-between md:justify-end p-4 gap-4'>
-            <Button type="submit" variant="outline" className='md:text-lg' onClick={currentPage?.onPrevious}>{currentPage?.previousButtonText}</Button>
-            <Button type="submit" variant="default" className='md:text-lg' onClick={currentPage?.onNext}>{currentPage?.nextButtonText}</Button>
+            <Button type="submit" variant="outline" className='text-base md:text-lg' onClick={currentPage?.onPrevious}>{currentPage?.previousButtonText}</Button>
+            <Button type="submit" variant="default" className='text-base md:text-lg' onClick={currentPage?.onNext}>{currentPage?.nextButtonText}</Button>
           </div>
         </div>
       )
@@ -313,8 +469,8 @@ const goToPreviousPage = () => {
                 {helperPage?.content}
             </div> 
             <div id="buttonFooter" className='flex w-full justify-between md:justify-end p-4 gap-4'>
-              <Button type="submit" variant="outline" className='md:text-lg' onClick={helperPage?.onCancelAction}>{helperPage?.cancelButtonText}</Button>
-              <Button type="submit" variant="default" className='md:text-lg' onClick={helperPage?.onAction}>{helperPage?.actionButtonText}</Button>
+              <Button type="submit" variant="outline" className='text-base md:text-lg' onClick={helperPage?.onCancelAction}>{helperPage?.cancelButtonText}</Button>
+              <Button type="submit" variant="default" className='text-base md:text-lg' onClick={helperPage?.onAction}>{helperPage?.actionButtonText}</Button>
             </div>
           </div>
         </div>
@@ -327,36 +483,6 @@ const SocialList: FC = () => {
     <div>Your posts</div>
   );
 }
-
-  // Function to render the current page
-  // const renderPage = () => {
-  //   if (isWizardMode) {
-  //     const currentPage = wizardPages[currentPageIndex];
-  //     return (
-  //       <div>
-  //         <h2>{currentPage.title}</h2>
-  //         {currentPage.content}
-  //         <button onClick={currentPage.onNext}>{currentPage.nextButtonText}</button>
-  //         {currentPageIndex > 0 && (
-  //           <button onClick={currentPage.onPrevious}>{currentPage.previousButtonText}</button>
-  //         )}
-  //       </div>
-  //     );
-  //   } else {
-  //     return (
-  //       <div>
-  //         {/* Render helper pages */}
-  //         {helperPages.map((helperPage, index) => (
-  //           <div key={index}>
-  //             <h2>{helperPage.title}</h2>
-  //             <p>{helperPage.content}</p>
-  //             <button onClick={helperPage.onAction}>{helperPage.actionButtonText}</button>
-  //           </div>
-  //         ))}
-  //       </div>
-  //     );
-  //   }
-  // };
 
 export default {
   name: 'Social Media',

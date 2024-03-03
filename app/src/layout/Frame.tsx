@@ -19,9 +19,13 @@ export const Frame: FC<FrameProps> = ({ navigation }) => {
       setIsNavOpen(!isNavOpen);
     };
 
+    const closeNavMenu = () => {
+      setIsNavOpen(false);
+    }
+
   return (
     <main className="w-screen min-h-screen flex flex-col bg-gray-50">
-      <header className="bg-[#438959]">
+      <header className="bg-[#438959] fixed w-full">
         <div className="w-full max-w-7xl mx-auto py-2 px-3 md:py-4 md:px-6 text-white flex justify-between items-center">
         <button className='md:hidden w-8 h-8' onClick={toggleNav}>
           {isNavOpen ? (
@@ -46,21 +50,27 @@ export const Frame: FC<FrameProps> = ({ navigation }) => {
             </svg>
           </div>
           <h1 className="text-2xl md:text-4xl"><span className='font-semibold'>Tools</span><span className='font-extralight px-0.5'>For</span><span className='font-semibold'>Charities</span></h1>
-          <div className="rounded-full w-8 h-8 md:w-12 md:h-12 bg-white/25 overflow-hidden">
-            <FiUser className="w-full h-full " />
+          <div className="w-8 h-8 md:w-12 md:h-12 overflow-hidden">
+            <button className="rounded-full w-8 h-8 md:w-12 md:h-12 bg-white/25 overflow-hidden"><FiUser className="w-full h-full " /></button>
           </div>
         </div>
       </header>
       <div>
-        <div className="flex gap-6 w-full max-w-7xl mx-auto px-3 py-2 md:px-5 ">
-          {/* Hide this for now */}
-          <nav className={`${isNavOpen ? 'block absolute z-20 shadow-md' : 'hidden'} w-fit h-fit md:flex gap-1 flex-col p-3 pl-1 bg-white border border-gray-100 rounded-lg`}>
-            <label className="text-gray-500 px-4 py-2 font-medium">Navigation</label>
-            <Link to="/" className="flex gap-2 items-center px-4 py-2 text-gray-700 font-medium hover:bg-gray-50">
+        <div className="flex gap-6 w-full max-w-7xl mx-auto px-3 py-2 md:px-5 mt-12 md:mt-24">
+        {isNavOpen && (
+            //Overlay for Menu
+            <div
+              className="fixed inset-0 bg-black opacity-50"
+              onClick={closeNavMenu} // Close menu when overlay is clicked
+            ></div>
+          )}
+          <nav className={`${isNavOpen ? 'block absolute z-30 shadow-md' : 'hidden'} w-fit h-fit md:flex gap-1 flex-col p-3 pl-1 bg-white border border-gray-100 rounded-lg`}>
+            <span className="text-gray-500 px-4 py-2 font-medium">Navigation</span>
+            <Link to="/" onClick={closeNavMenu} key="home" className="flex gap-2 items-center px-4 py-2 text-gray-700 font-medium hover:bg-gray-50">
               <FiHome />
               <span>Home</span>
             </Link>
-            {navigation.map((nav) => <NavigationSection key={nav.path} {...nav} />)}
+            {navigation.map((nav) => <NavigationSection key={nav.path} {...nav} onClick={closeNavMenu} />)}
           </nav>
           <div className="flex-1">
             <Outlet />
@@ -71,15 +81,24 @@ export const Frame: FC<FrameProps> = ({ navigation }) => {
   );
 };
 
-const NavigationSection: FC<NavigationObject> = ({ icon: Icon, name, path, children }) => {
+interface NavigationSectionProps extends NavigationObject {
+  onClick?: () => void;
+}
+
+const NavigationSection: FC<NavigationSectionProps> = ({ icon: Icon, name, path, children, onClick }) => {
   return (
     <>
-      {' '}
-      <Link to={path} className="flex gap-2 items-center px-4 py-2 text-gray-700 font-medium hover:bg-gray-50">
+      <Link to={path} onClick={onClick} className="flex gap-2 items-center px-4 py-2 text-gray-700 font-medium hover:bg-gray-50">
         <Icon />
         <span>{name}</span>
       </Link>
-      {children && <div className="ml-4 flex gap-1 flex-col">{children.map(NavigationSection)}</div>}
+      {children && (
+        <div className="ml-4 flex gap-1 flex-col">
+          {children.map((child, index) => (
+            <NavigationSection key={index} {...child} onClick={onClick}/>
+          ))}
+        </div>
+      )}
     </>
   );
 };

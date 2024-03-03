@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
-import { useSocialWizardStore } from '../social-wizard';
+import { useImageStore } from '../social-wizard';
 import { FiCheck } from 'react-icons/fi';
+import { SiUnsplash } from 'react-icons/si';
 
 
 interface PhotoGalleryProps{
@@ -8,11 +9,13 @@ interface PhotoGalleryProps{
     largeImageURL: string;
     id: string;
     description: string; 
+    attributionName: string;
+    attributionURL: string; 
 }
 
-const PhotoGallery: React.FC<PhotoGalleryProps> = ({ imageURL,largeImageURL, id, description }) => {
+const PhotoGallery: React.FC<PhotoGalleryProps> = ({ imageURL,largeImageURL, id, description, attributionName, attributionURL  }) => {
     
-    const store = useSocialWizardStore();
+    const store = useImageStore();
     const selectedImageId = store.selectedImageId
     
     const handleClick = () => {
@@ -43,11 +46,16 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ imageURL,largeImageURL, id,
   return (
               <button onClick={handleClick} className={`relative result aspect-[1/1] bg-slate-300 h-full w-full cursor-pointer ${id === selectedImageId ? 'border-4 border-blue-800' : ''}`} key={id}>
                 {imageURL && (
-                  <img className={`h-full w-full object-cover ${id === selectedImageId ? 'opacity-40' : ''}`} src={imageURL} alt={description || 'Photo'} />
+                    <>
+                        <img className={`h-full w-full object-cover ${id === selectedImageId ? 'opacity-40' : ''}`} src={imageURL} alt={description || 'Photo'} />
+                    </>
                 )}
                 {id === selectedImageId ?
                     <div className='absolute top-0 right-0 m-1'><FiCheck className="rounded-full" size={28} style={{backgroundColor:'blue',color:'white'}}/></div>
-                : null }
+                :   <div className='w-4/5 md:w-2/3 h-auto bg-black/50 text-ellipsis overflow-hidden max-w-full text-white absolute right-0 bottom-0 text-xs px-1'>
+                <a target='_new' className='whitespace-nowrap' href={`${attributionURL}?utm_source=your_app_name&utm_medium=referral`}><span className='text-[8px]'></span>@{attributionName}</a>
+                </div>
+             }
               </button>
   );
 };
