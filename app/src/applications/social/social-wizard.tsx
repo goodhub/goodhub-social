@@ -2,6 +2,7 @@ import { FC, useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiList, FiRadio, FiSettings} from 'react-icons/fi';
 import { ApplicationConfig, useApplication } from '../utils';
+import { useAuthStore } from '@/layout/Frame';
 
 // import ImageSearchPage from './components/image-search-page';
 import WhatToPost from './components/what-to-post';
@@ -9,6 +10,7 @@ import PreviewAndEdit from './components/preview-and-edit';
 import WhereAndWhen from './components/where-and-when';
 import PartnerList from './components/partner-list';
 import SocialMediaCompanyList from './components/social-companies-list'
+import SocialList from './social-list'
 
 import { Button } from '@/components/ui/button';
 
@@ -20,9 +22,11 @@ interface ImageStore {
   selectedImageId: string;
   selectedImageDescription: string;
   selectedImageURL: string;
+  selectedImageDownloadURL: string;
   preSelectedImageId: string;
   preSelectedImageDescription: string;
   preSelectedImageURL: string;
+  preSelectedImageDownloadURL: string;
   addNewImageToCollection: boolean;
   query: string;
   previousQuery: string;
@@ -33,8 +37,8 @@ interface ImageStore {
   allUnsplash: boolean;
   setAllUnsplash: (value: boolean) => void;
   toggleAddNewImageToCollection: () => void;
-  setSelectedImage: (selectedImageId:string, selectedImageDescription:string, selectedImageURL:string) => void;
-  setPreSelectedImage: (preSelectedImageId:string, preSelectedImageDescription:string, preSelectedImageURL:string) => void;
+  setSelectedImage: (selectedImageId:string, selectedImageDescription:string, selectedImageURL:string, selectedImageDownloadURL:string) => void;
+  setPreSelectedImage: (preSelectedImageId:string, preSelectedImageDescription:string, preSelectedImageURL:string, preSelectedImageDownloadURL:string) => void;
   removeSelectedImage: () => void;
 }
 
@@ -42,15 +46,18 @@ export const useImageStore = create<ImageStore>((set) => ({
   selectedImageURL: '',
   selectedImageId:'',
   selectedImageDescription:'',
-  setSelectedImage : (imageId, imageDescription, imageURL) => 
+  selectedImageDownloadURL:'',
+  setSelectedImage : (imageId, imageDescription, imageURL, imageDownloadURL) => 
     set((state) => ({ 
       selectedImageURL: imageURL,
       selectedImageId: imageId,
       selectedImageDescription: imageDescription,
+      selectedImageDownloadURL: imageDownloadURL,
     })),
     preSelectedImageURL: '',
     preSelectedImageId:'',
     preSelectedImageDescription:'',
+    preSelectedImageDownloadURL:'',
     addNewImageToCollection: false,
     toggleAddNewImageToCollection: () => set((state: ImageStore) => ({ addNewImageToCollection: !state.addNewImageToCollection })),
     query: '',
@@ -61,16 +68,18 @@ export const useImageStore = create<ImageStore>((set) => ({
     setPhotos: (photos) => set({ photos }),
     allUnsplash: false,
     setAllUnsplash: (value) => set({ allUnsplash: value }),
-    setPreSelectedImage : (imageId, imageDescription, imageURL) => 
+    setPreSelectedImage : (imageId, imageDescription, imageURL, imageDownloadURL) => 
     set((state) => ({ 
       preSelectedImageURL: imageURL,
       preSelectedImageId: imageId,
       preSelectedImageDescription: imageDescription,
+      preSelectedImageDownloadURL: imageDownloadURL,
     })),
   removeSelectedImage: () => set({
     selectedImageURL: '',
     selectedImageId:'',
     selectedImageDescription:'',
+    selectedImageDownloadURL:'',
   })
 }));
 
@@ -111,18 +120,22 @@ setUnsplashURLs(useKeyAndURLStore.getState().UNSPLASH_API_KEY);
 /* selected UI elements store */
 interface SelectedUIElementsStore {
   selectedGPTCB: boolean;
+  selectedTitleCB: boolean;
   selectedLogoCB: boolean;
   selectedPartnerCB: boolean;
   toggleGPTCB: () => void;
+  toggleTitleCB: () => void;
   toggleLogoCB: () => void;
   togglePartnerCB: () => void;
 }
 
 export const useSelectedUIElementsStore = create<SelectedUIElementsStore>((set) => ({
   selectedGPTCB: true,
+  selectedTitleCB: true,
   selectedLogoCB: true,
   selectedPartnerCB: true,
   toggleGPTCB: () => set((state: SelectedUIElementsStore) => ({ selectedGPTCB: !state.selectedGPTCB })),
+  toggleTitleCB: () => set((state: SelectedUIElementsStore) => ({ selectedTitleCB: !state.selectedTitleCB })),
   toggleLogoCB: () => set((state: SelectedUIElementsStore) => ({ selectedLogoCB: !state.selectedLogoCB })),
   togglePartnerCB: () => set((state: SelectedUIElementsStore) => ({ selectedPartnerCB: !state.selectedPartnerCB })),
 }));
@@ -163,11 +176,25 @@ export const useSelectedPartnersStore = create<SelectedPartnersStore>((set) => (
 
 interface SelectedSocialCompaniesStore {
   selectedSocialCompanies: string[];
+  previousSocialCompanies: string[];
+  setPreviousSocialCompanies: (previousSocialCompanies: string[]) => void;
+  restoreSocialCompanies: ()=> void;
+  setSelectedSocialCompanies: (selectedSocialCompanies: string[]) => void;
   toggleSocialCompanySelection: (socialCompanyKey: string) => void;
 }
 
 export const useSelectedSocialCompaniesStore = create<SelectedSocialCompaniesStore>((set) => ({
   selectedSocialCompanies: ['website','twitter','facebook', 'instagram'],
+  previousSocialCompanies: [],
+  setPreviousSocialCompanies: (previousSocialCompanies) => set({ previousSocialCompanies }),
+  setSelectedSocialCompanies: (selectedSocialCompanies) => set({ selectedSocialCompanies }),
+  restoreSocialCompanies: () => set((store) => {
+    const previousSocialCompanies = store.previousSocialCompanies;
+    return { 
+      selectedSocialCompanies: previousSocialCompanies,
+      previousSocialCompanies: []
+    }
+  }),
   toggleSocialCompanySelection: (socialCompanyKey) => {
       set((state) => ({
           selectedSocialCompanies: state.selectedSocialCompanies.includes(socialCompanyKey)
@@ -179,14 +206,11 @@ export const useSelectedSocialCompaniesStore = create<SelectedSocialCompaniesSto
 
 // Define an interface representing the structure of your JSON data
 interface GPTData {
-  contact?: string | null;
-  date?: string | null;
   image_search_word?: string | null;
   subtitle?: string | null;
-  time?: string | null;
   title?: string | null;
   tweet?: string | undefined;
-  venue?: string | null;
+  missing?: string | null;
 }
 
 
@@ -194,22 +218,23 @@ interface GPTData {
 interface JsonStoreState {
   jsonData: GPTData; // Use the interface to type the state
   originalText: string;
+  isLoading: boolean;
+  setIsLoading: (value: boolean) => void;
   setOriginalText: (text: string) => void;
   setJsonData: (data: Partial<GPTData>) => void;
 }
 
 export const useJsonStore = create<JsonStoreState>((set) => ({
   jsonData: {
-    contact: '',
-    date: '',
     image_search_word: '',
     subtitle: 'Subtitle in here, click to edit',
-    time: '',
     title: 'Title in here!!',
     tweet: '',
-    venue: '',
+    missing: '',
   },
   originalText: '',
+  isLoading: false,
+  setIsLoading: (value) => set({ isLoading: value }),
   setOriginalText: (originalText) => set({ originalText }),
   setJsonData: (data: Partial<GPTData>) => {
     // Merge the provided data with the current state data
@@ -230,7 +255,15 @@ const SocialWizard: FC = () => {
   //const PStore = useSelectedPartnersStore;
 
   const imgStore = useImageStore();
+  const partnerStore = useSelectedPartnersStore();
+  const socialStore = useSelectedSocialCompaniesStore();
   const keyStore = useKeyAndURLStore();
+  const authStore = useAuthStore();
+
+  if (!authStore.isAuthorised){
+    //console.log(authStore.isAuthorised);
+    return;
+  }
 
   //   // State to track the current page index
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -338,6 +371,7 @@ const goToPreviousPage = () => {
         onCancelAction: () => {
           // clear down anything selected
           window.scrollTo(0, 0);
+          partnerStore.restoreSelectedPartners();
           setIsWizardMode(true);
         },
         onAction: () => {
@@ -355,6 +389,7 @@ const goToPreviousPage = () => {
         onCancelAction: () => {
           // clear down anything selected
           window.scrollTo(0, 0);
+          socialStore.restoreSocialCompanies();
           setIsWizardMode(true);
         },
         onAction: () => {
@@ -380,6 +415,29 @@ const goToPreviousPage = () => {
           setIsWizardMode(true);
           //
           console.log('Add new image to unsplash - ' + imgStore.addNewImageToCollection + ' - photo_id: ' + imgStore.selectedImageId);
+
+
+          async function callUnSplashDownload(unsplashURL: string) {
+            try {
+            const url = unsplashURL + "&client_id=" + keyStore.UNSPLASH_API_KEY
+              const response = await fetch(url);
+              if (!response.ok) {
+                // Handle HTTP error status
+                throw new Error('UnSplash response was not ok');
+              }
+              const data = await response.json();
+              // Process the data as needed
+              console.log(data);
+            } catch (error) {
+              // Handle fetch or JSON parsing errors
+              console.error('Error fetching data:', error);
+            }
+          }
+
+          callUnSplashDownload(imgStore.selectedImageDownloadURL);
+
+           //
+           console.log('Add new image to unsplash - ' + imgStore.addNewImageToCollection + ' - photo_id: ' + imgStore.selectedImageId);
 
           // Do this when we have write_collections scope from Unsplash
 
@@ -478,11 +536,11 @@ const goToPreviousPage = () => {
     }
 };
 
-const SocialList: FC = () => {
-  return (
-    <div>Your posts</div>
-  );
-}
+// const SocialList: FC = () => {
+//   return (
+//     <div>Your posts</div>
+//   );
+// }
 
 export default {
   name: 'Social Media',
@@ -495,7 +553,7 @@ export default {
       icon: FiRadio,
       children: [
         {
-          name: 'Your posts',
+          name: 'Your Posts',
           path: '/social/list',
           icon: FiList
         }

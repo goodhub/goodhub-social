@@ -1,9 +1,35 @@
+import React from 'react';
 import { FC, useState } from 'react';
 import { FiHome, FiMenu, FiUser, FiXSquare } from 'react-icons/fi';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { NavigationObject } from '../applications/utils';
+import { create } from 'zustand';
+import { Applications } from '../App';
+
+interface AuthStore {
+  AUTH_EMAIL: string;
+  AUTH_PASS: string;
+  isAuthorised: boolean;
+  setAuthorised: (value: boolean) => void;
+}
 
 
+export const useAuthStore = create<AuthStore>((set) => {
+  // Check if the user is already authenticated from localStorage
+  const isAuthorised = sessionStorage.getItem('isAuthorised') === 'true';
+
+  return {
+    AUTH_EMAIL: import.meta.env.VITE_APP_AUTH_EMAIL,
+    AUTH_PASS: import.meta.env.VITE_APP_AUTH_PASSWORD,
+    isAuthorised,
+    setAuthorised: (value) => {
+      // Update the store
+      set({ isAuthorised: value });
+      // Update localStorage
+      sessionStorage.setItem('isAuthorised', value ? 'true' : 'false');
+    },
+  };
+});
 
 interface FrameProps {
   navigation: NavigationObject[];
@@ -23,9 +49,34 @@ export const Frame: FC<FrameProps> = ({ navigation }) => {
       setIsNavOpen(false);
     }
 
+    const handleHomeClick = () => {
+      // return;
+      // const name = "Tools For Charities";
+      // const parts = name.split(" ");
+      // const titleHeader = document.getElementById("title-header");
+      // if (titleHeader) {
+      //   titleHeader.innerHTML = parts.map((part, index) => (
+      //     `<span class="${index % 2 === 0 ? 'font-semibold' : 'font-extralight px-0.5'}">${part}</span>`
+      //   )).join("");
+      // }
+      // Close the navigation menu if needed
+      closeNavMenu();
+    };
+
+  const location = useLocation();
+  const current = Applications.find((app) => {
+    const routes = [...app.routes.dashboard, ...app.routes.standalone]
+    return routes.some(route => location.pathname.endsWith(route.path))
+  });
+  const titleFragments = current?.name.split(' ').map((value, index) => (
+    <span key={index} className={index % 2 === 0 ? 'font-semibold' : 'font-extralight px-0.5'}>{value}</span>
+  ));
+  
+  const title = <React.Fragment>{titleFragments}</React.Fragment>;
+
   return (
     <main className="w-screen min-h-screen flex flex-col bg-gray-50">
-      <header className="bg-[#438959] fixed w-full">
+      <header className="bg-[#438959] fixed w-full z-10">
         <div className="w-full max-w-7xl mx-auto py-2 px-3 md:py-4 md:px-6 text-white flex justify-between items-center">
         <button className='md:hidden w-8 h-8' onClick={toggleNav}>
           {isNavOpen ? (
@@ -49,9 +100,25 @@ export const Frame: FC<FrameProps> = ({ navigation }) => {
               </g>
             </svg>
           </div>
-          <h1 className="text-2xl md:text-4xl"><span className='font-semibold'>Tools</span><span className='font-extralight px-0.5'>For</span><span className='font-semibold'>Charities</span></h1>
+          <h1 className="text-2xl md:text-4xl" id="title-header">
+            {title && title.props.children ? (
+              title
+            ) : (
+              <React.Fragment>
+                <span className='font-semibold'>Tools</span>
+                <span className='font-extralight px-0.5'>For</span>
+                <span className='font-semibold'>Charities</span>
+              </React.Fragment>
+            )}
+          </h1>
           <div className="w-8 h-8 md:w-12 md:h-12 overflow-hidden">
-            <button className="rounded-full w-8 h-8 md:w-12 md:h-12 bg-white/25 overflow-hidden"><FiUser className="w-full h-full " /></button>
+            <button className="rounded-full w-8 h-8 md:w-12 md:h-12 bg-white/25 overflow-hidden">
+              {useAuthStore().isAuthorised ? (
+                <img className="h-full w-full" src="https://media.licdn.com/dms/image/C5603AQHx1SXKVoQkBA/profile-displayphoto-shrink_400_400/0/1518451430090?e=2147483647&v=beta&t=4pZDaQ2S5Qbo5a0ksNrV983JNzS6eXrKTSZuUlSjjvE" />
+              ) : (
+                <FiUser className="w-full h-full " />
+              )}
+                </button>
           </div>
         </div>
       </header>
@@ -66,7 +133,7 @@ export const Frame: FC<FrameProps> = ({ navigation }) => {
           )}
           <nav className={`${isNavOpen ? 'block absolute z-30 shadow-md' : 'hidden'} w-fit h-fit md:flex gap-1 flex-col p-3 pl-1 bg-white border border-gray-100 rounded-lg`}>
             <span className="text-gray-500 px-4 py-2 font-medium">Navigation</span>
-            <Link to="/" onClick={closeNavMenu} key="home" className="flex gap-2 items-center px-4 py-2 text-gray-700 font-medium hover:bg-gray-50">
+            <Link to="/" onClick={handleHomeClick} key="home" className="flex gap-2 items-center px-4 py-2 text-gray-700 font-medium hover:bg-gray-50">
               <FiHome />
               <span>Home</span>
             </Link>
@@ -86,9 +153,23 @@ interface NavigationSectionProps extends NavigationObject {
 }
 
 const NavigationSection: FC<NavigationSectionProps> = ({ icon: Icon, name, path, children, onClick }) => {
+  const handleMenuItemClick = () => {
+    //return;
+    // if (path?.indexOf("breakout") === -1){
+    //   const parts = name.split(" ");
+    //   const titleHeader = document.getElementById("title-header");
+    //   if (titleHeader) {
+    //     titleHeader.innerHTML = parts.map((part, index) => (
+    //       `<span class="${index % 2 === 0 ? 'font-semibold' : 'font-extralight px-0.5'}">${part}</span>`
+    //     )).join("");
+    //   }
+    // }
+    if (onClick) onClick();
+  };
+
   return (
     <>
-      <Link to={path} onClick={onClick} className="flex gap-2 items-center px-4 py-2 text-gray-700 font-medium hover:bg-gray-50">
+      <Link to={path} onClick={handleMenuItemClick} className="flex gap-2 items-center px-4 py-2 text-gray-700 font-medium hover:bg-gray-50">
         <Icon />
         <span>{name}</span>
       </Link>

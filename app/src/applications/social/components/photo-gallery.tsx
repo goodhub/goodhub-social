@@ -1,7 +1,6 @@
 import React, { FC } from 'react';
-import { useImageStore } from '../social-wizard';
+import { useImageStore} from '../social-wizard';
 import { FiCheck } from 'react-icons/fi';
-import { SiUnsplash } from 'react-icons/si';
 
 
 interface PhotoGalleryProps{
@@ -11,12 +10,15 @@ interface PhotoGalleryProps{
     description: string; 
     attributionName: string;
     attributionURL: string; 
+    downloadCallBack: string;
 }
 
-const PhotoGallery: React.FC<PhotoGalleryProps> = ({ imageURL,largeImageURL, id, description, attributionName, attributionURL  }) => {
+const PhotoGallery: React.FC<PhotoGalleryProps> = ({ imageURL,largeImageURL, id, description, attributionName, attributionURL, downloadCallBack  }) => {
     
     const store = useImageStore();
     const selectedImageId = store.selectedImageId
+
+
     
     const handleClick = () => {
         const fetchImage = async () => {
@@ -30,7 +32,9 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ imageURL,largeImageURL, id,
                     // console.log("image loads")
                     const dataURL = reader.result as string;
                     //dataURL && setImageData(dataURL);
-                    if (dataURL) store.setSelectedImage(id, description, dataURL);
+                    if (dataURL){
+                        store.setSelectedImage(id, description, dataURL, downloadCallBack);
+                    }
                 };
                 reader.readAsDataURL(blob);
             } catch (error) {

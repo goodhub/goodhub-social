@@ -76,7 +76,7 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     reader.onloadend = () => {
       if (typeof reader.result === 'string'){
           const base64String = reader.result as string;
-          if (base64String) imgStore.setSelectedImage('local', '', base64String);
+          if (base64String) imgStore.setSelectedImage('local', '', base64String,'');
       }
     };
     reader.readAsDataURL(file);
@@ -190,6 +190,7 @@ const handleMoreResults = () => {
                       description={photo.description}
                       attributionName={photo.user.name}
                       attributionURL={photo.user.links.html}
+                      downloadCallBack={photo.links.download_location}
                       />
                   ))}
                   {photos.length !==0 && !allUnsplash && (

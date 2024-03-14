@@ -8,7 +8,7 @@ import socialWizard from './applications/social/social-wizard';
 import Home from './applications/home'
 
 
-const Applications = [example, website, socialWizard];
+export const Applications = [example, website, socialWizard];
 
 const ApplicationRouteManager = () => {
   const navigation = Applications.flatMap(app => app.navigation);
