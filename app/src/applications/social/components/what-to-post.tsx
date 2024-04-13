@@ -128,11 +128,11 @@ async function callChatGPTAPI(inputText:string) {
 
       const prompt = `Today's date is ${formattedDate}. I will provide you with some text for our charity's Twitter handle. Please analyze the text to determine if it's about a good news, bad news, a request for help, a position we want to recruit, or an upcoming event. Based on the text type, generate the following:
     
-   - a fun tweet of no less than 20 words, ensuring all information provided in the original text is included, but within 280 characters. 
+   - a fun social media post of no less than 20 words, ensuring ALL information provided in the original text is included, but within 280 characters. Please DO NOT include hashtags, but you can include emojis.
 
-   - In addition to the tweet text, if the original text is about some good news, a request for help, or a recruitment position, provide a catchy title (less than 6 words with a pun if possible) and a brief subtitle (less than 18 words). 
+   - In addition to the tweet text, if the original text is about some good news, a request for help, or a recruitment position, provide a catchy title (less than 6 words) and a brief subtitle (less than 18 words). 
 
-   - In addition to the tweet text, if the original text is about an upcoming event, provide a catchy title (less than 6 words with a pun if possible, including 'free' if applicable) and a brief subtitle of less than 18 words (including day and month, time and location if available). Please DO NOT include any date, time, or location if not provided in the original text.
+   - In addition to the tweet text, if the original text is about an upcoming event, provide a catchy title (less than 6 words, including 'free' if applicable) and a brief subtitle of less than 18 words (including day and month, time and location if available). Please DO NOT include any date, time, or location if not provided in the original text.
 
    - In addition, if the original text is about an upcoming event, please set the "missing" field in the JSON output to "event". 
 
