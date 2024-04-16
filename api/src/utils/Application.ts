@@ -18,21 +18,12 @@ interface ApplicationSetupOptions<M extends Model, E, R extends AnyRouter> {
 }
 
 const DatabaseEnvironmentVariables = z.object({
-  DATABASE_NAME: z.string(),
-  DATABASE_USER: z.string(),
-  DATABASE_PASSWORD: z.string(),
-  DATABASE_HOST: z.string()
+  DATABASE_URL: z.string()
 });
 
-const { DATABASE_HOST, DATABASE_USER, DATABASE_NAME, DATABASE_PASSWORD } = DatabaseEnvironmentVariables.parse(
-  process.env
-);
+const { DATABASE_URL } = DatabaseEnvironmentVariables.parse(process.env);
 
-const sequelize = new Sequelize(DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, {
-  host: DATABASE_HOST,
-  dialect: 'mysql',
-  dialectOptions: { ssl: { rejectUnauthorized: true } }
-});
+const sequelize = new Sequelize(DATABASE_URL);
 
 try {
   await sequelize.authenticate();

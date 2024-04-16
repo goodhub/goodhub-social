@@ -6,13 +6,9 @@ import cors from 'cors';
 import { router } from './trpc.js';
 
 const { default: Example } = await import('./applications/example/Example.js');
-// const { default: Unsplash } = await import('./applications/website/Unsplash.js');"
-const { default: Website } = await import('./applications/website/Website.js');
 
 const routes = router({
-  [Example.id]: Example.router,
-  // [Example.id]: Unsplash.router,
-  [Website.id]: Website.router
+  [Example.id]: Example.router
 });
 
 export type AppRouter = typeof routes;

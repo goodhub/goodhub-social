@@ -33,10 +33,7 @@ export = async () => {
 
   const env = {
     PORT: '3000',
-    DATABASE_NAME: config.require('database-name'),
-    DATABASE_USER: config.require('database-user'),
-    DATABASE_PASSWORD: config.require('database-password'),
-    DATABASE_HOST: config.require('database-host')
+    DATABASE_URL: config.require('database-url')
   };
 
   const api = new ContainerApp(`${id}-api`, {
