@@ -7,11 +7,7 @@ interface EditableTextProps {
   storeSetter: (newValue: string) => void;
 }
 
-const EditableText: FC<EditableTextProps> = ({
-  initialValue,
-  className,
-  storeSetter,
-}) => {
+const EditableText: FC<EditableTextProps> = ({ initialValue, className, storeSetter }) => {
   const textRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState(initialValue);
 
@@ -22,7 +18,7 @@ const EditableText: FC<EditableTextProps> = ({
   const [prevCursorPosition, setPrevCursorPosition] = useState<number | null>(null);
 
   useEffect(() => {
-    try{
+    try {
       if (textRef.current && prevCursorPosition !== null) {
         const selection = window.getSelection();
         const range = document.createRange();
@@ -32,23 +28,21 @@ const EditableText: FC<EditableTextProps> = ({
         selection?.addRange(range);
         setPrevCursorPosition(null); // Reset prevCursorPosition after restoring cursor position
       }
-    }catch(error: any){
-      console.log(error.message)
+    } catch (error: any) {
+      console.log(error.message);
     }
-    }, [prevCursorPosition]);
-
+  }, [prevCursorPosition]);
 
   //supress inputs < > and ctrl/cmd b or i
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
-    if ((e.key === '<' || e.key === '>')||((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'i'))) {
+    if (e.key === '<' || e.key === '>' || ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'i'))) {
       e.preventDefault(); // Prevent the default action for the keystroke
     }
   };
 
   const handleInputChange = (): void => {
-  
     //const newValue = sanitizeHtml(textRef.current?.textContent as string, {allowedTags: [],allowedAttributes: {}}) || '';
-    const newValue = textRef.current?.textContent as string || '';
+    const newValue = (textRef.current?.textContent as string) || '';
     const parser = new DOMParser();
     const doc = parser.parseFromString(newValue, 'text/html');
     const textContent = doc.body.textContent || ''; // Extract text content from parsed HTML

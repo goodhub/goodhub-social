@@ -2,9 +2,9 @@
  * v0 by Vercel.
  * @see https://v0.dev/t/XWWEapvOFOb
  */
-import { Button } from "@/components/ui/button"
-import { PopoverTrigger, PopoverContent, Popover } from "@/components/ui/popover"
-import { CommandInput, CommandEmpty, CommandItem, CommandGroup, CommandList, Command } from "@/components/ui/command"
+import { Button } from '@/components/ui/button';
+import { PopoverTrigger, PopoverContent, Popover } from '@/components/ui/popover';
+import { CommandInput, CommandEmpty, CommandItem, CommandGroup, CommandList, Command } from '@/components/ui/command';
 
 export default function Component() {
   return (
@@ -44,7 +44,7 @@ export default function Component() {
         </Command>
       </PopoverContent>
     </Popover>
-  )
+  );
 }
 
 function TextIcon(props) {
@@ -65,5 +65,5 @@ function TextIcon(props) {
       <path d="M21 12.1H3" />
       <path d="M15.1 18H3" />
     </svg>
-  )
+  );
 }

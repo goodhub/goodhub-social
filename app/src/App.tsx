@@ -5,8 +5,7 @@ import { Frame } from './layout/Frame';
 import example from './applications/example/Example';
 import website from './applications/website/Website';
 import socialWizard from './applications/social/social-wizard';
-import Home from './applications/home'
-
+import Home from './applications/home';
 
 export const Applications = [example, website, socialWizard];
 
@@ -19,12 +18,11 @@ const ApplicationRouteManager = () => {
     {
       element: <TRPCProvider />,
       children: [
-        { path: '/', element: <Frame navigation={navigation} />, children: [
-          { children: [
-            { index: true, element: <Home /> },
-            ...dashboard
-          ] }
-       ] },
+        {
+          path: '/',
+          element: <Frame navigation={navigation} />,
+          children: [{ children: [{ index: true, element: <Home /> }, ...dashboard] }]
+        },
         { children: standalone }
       ]
     }
