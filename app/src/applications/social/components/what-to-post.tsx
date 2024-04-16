@@ -1,23 +1,22 @@
-import React, { FC, useState, ChangeEvent, useEffect } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 
-import ImageSearchPage from './image-search-page';
-import {
-  useSelectedPartnersStore,
-  useSelectedUIElementsStore,
-  useJsonStore,
-  useImageStore,
-  useKeyAndURLStore
-} from '../social-wizard';
 import partnerData from '../base-data/partner-organisations';
+import {
+  useImageStore,
+  useJsonStore,
+  useKeyAndURLStore,
+  useSelectedPartnersStore,
+  useSelectedUIElementsStore
+} from '../social-wizard';
+import ImageSearchPage from './image-search-page';
 
-import { Select } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useApplication } from '@/applications/utils';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import { FiHelpCircle } from 'react-icons/fi';
-import { start } from 'repl';
 
 // Iterate over the keys of the partnerData object
 const partnerItems = Object.entries(partnerData).map(([key, value]) => {
@@ -41,6 +40,10 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
 
   //is the component mounted or not
   const [isMounted, setIsMounted] = useState(true);
+
+  const { client } = useApplication('ai');
+
+  const getCompletion = client.ai.request.useMutation();
 
   useEffect(() => {
     return () => {
@@ -170,139 +173,122 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
 
     try {
       JSONstore.setIsLoading(true);
-      // Make the API call to ChatGPT
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-          ...parameters
-        })
-      });
-
       // Check if the response is successful
-      if (response.ok) {
-        // Parse the response JSON
-        const data = await response.json();
-        // Return the response data
-        debugLog(data);
-        let jsonData: any;
-        // Parse the returned text into a JSON object
-        try {
-          // Call the useJsonStore hook to access the store and its setter function
-          debugLog('Raw text from the response\n\n' + data.choices[0].text);
+      // Parse the response JSON
+      const data = await getCompletion.mutateAsync({
+        prompt,
+        ...parameters
+      });
+      // Return the response data
+      debugLog(data);
+      let jsonData: any;
+      // Parse the returned text into a JSON object
+      try {
+        // Call the useJsonStore hook to access the store and its setter function
+        debugLog('Raw text from the response\n\n' + data.choices[0].text);
 
-          //const text = window.prompt("",data.choices[0].text) as string;
+        //const text = window.prompt("",data.choices[0].text) as string;
 
-          const text = data.choices[0].text;
+        const text = data.choices[0].text;
 
-          // Find the index of the first opening curly bracket
-          let startIndex = text.indexOf('{');
-          const needsCurlies = text.indexOf('.') === 0 && startIndex === -1;
-          // Find the index of the last closing curly bracket
-          const endIndex = text.lastIndexOf('}') + 1;
-          debugLog('start - ' + startIndex + ', end - ' + endIndex);
-          // Extract the JSON string if Its a bad request take the middle out
-          const jsonString = needsCurlies ? '{' + text.slice(1, text.length) + '}' : text.slice(startIndex, endIndex);
-          // const jsonString = text.slice(startIndex, endIndex);
-          debugLog(jsonString);
-          // Normalize keys to lowercase in the JSON string
-          const normalizedJSONString = normalizeJSONStringKeys(jsonString);
+        // Find the index of the first opening curly bracket
+        let startIndex = text.indexOf('{');
+        const needsCurlies = text.indexOf('.') === 0 && startIndex === -1;
+        // Find the index of the last closing curly bracket
+        const endIndex = text.lastIndexOf('}') + 1;
+        debugLog('start - ' + startIndex + ', end - ' + endIndex);
+        // Extract the JSON string if Its a bad request take the middle out
+        const jsonString = needsCurlies ? '{' + text.slice(1, text.length) + '}' : text.slice(startIndex, endIndex);
+        // const jsonString = text.slice(startIndex, endIndex);
+        debugLog(jsonString);
+        // Normalize keys to lowercase in the JSON string
+        const normalizedJSONString = normalizeJSONStringKeys(jsonString);
 
-          if (normalizedJSONString === '{}') {
-            debugLog('FAIL in JSON string - try again');
+        if (normalizedJSONString === '{}') {
+          debugLog('FAIL in JSON string - try again');
+          return;
+        } else {
+          // Parse the JSON string into an object
+          try {
+            jsonData = JSON.parse(normalizedJSONString);
+            debugLog('parsed JSONdata - \n\n' + jsonData);
+          } catch (error) {
+            debugLog('Error parsing JSON: - ' + error);
+            //try again if fail and component still mounted
+
+            // Additional logic...
+            //if (isMounted){
             return;
-          } else {
-            // Parse the JSON string into an object
-            try {
-              jsonData = JSON.parse(normalizedJSONString);
-              debugLog('parsed JSONdata - \n\n' + jsonData);
-            } catch (error) {
-              debugLog('Error parsing JSON: - ' + error);
-              //try again if fail and component still mounted
-
-              // Additional logic...
-              //if (isMounted){
-              return;
-            }
           }
-
-          const API_URL = keyStore.UNSPLASH_URL_COLLECTION;
-          const API_URL2 = keyStore.UNSPLASH_URL_ALL;
-
-          const query = jsonData?.image_search_word;
-          if (query !== undefined) {
-            imgStore.setQuery(query);
-          }
-          if (imgStore.selectedImageURL === '' && query !== undefined) {
-            //console.log(query)
-            const image_response = await fetch(API_URL + query);
-            const image_data = await image_response.json();
-            imgStore.setPhotos(image_data.results);
-            debugLog(image_data);
-            let firstImage = image_data?.results[0];
-            //do we need to retry?
-            if (!firstImage && query !== undefined) {
-              // Rerun the routine with a different URL
-              debugLog('retry photo fetch from all of Unsplash');
-              const new_image_response = await fetch(API_URL2 + query);
-              const new_image_data = await new_image_response.json();
-              imgStore.setPhotos(new_image_data.results);
-              firstImage = new_image_data?.results[0];
-              debugLog(new_image_data);
-            }
-            if (firstImage) {
-              const response = await fetch(firstImage.urls.regular);
-              const blob = await response.blob();
-              const reader = new FileReader();
-              reader.onload = () => {
-                debugLog('image loads');
-                const dataURL = reader.result as string;
-                //console.log("image loads - "+ dataURL)
-                //dataURL && setImageData(dataURL);
-
-                if (dataURL) {
-                  if (isMounted) {
-                    //are we still on this page
-                    if (imgStore.selectedImageURL === '')
-                      imgStore.setPreSelectedImage(
-                        firstImage.id,
-                        firstImage.description,
-                        dataURL,
-                        firstImage.links.download_location
-                      );
-                  } else {
-                    //we are on the nxt page
-                    if (imgStore.selectedImageURL === '')
-                      imgStore.setSelectedImage(
-                        firstImage.id,
-                        firstImage.description,
-                        dataURL,
-                        firstImage.links.download_location
-                      );
-                  }
-                }
-              };
-              reader.readAsDataURL(blob);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching image:', error);
         }
 
-        //Turn off skeleton on preview and edit page
-        JSONstore.setIsLoading(false);
+        const API_URL = keyStore.UNSPLASH_URL_COLLECTION;
+        const API_URL2 = keyStore.UNSPLASH_URL_ALL;
 
-        if (jsonData?.tweet) return jsonData;
+        const query = jsonData?.image_search_word;
+        if (query !== undefined) {
+          imgStore.setQuery(query);
+        }
+        if (imgStore.selectedImageURL === '' && query !== undefined) {
+          //console.log(query)
+          const image_response = await fetch(API_URL + query);
+          const image_data = await image_response.json();
+          imgStore.setPhotos(image_data.results);
+          debugLog(image_data);
+          let firstImage = image_data?.results[0];
+          //do we need to retry?
+          if (!firstImage && query !== undefined) {
+            // Rerun the routine with a different URL
+            debugLog('retry photo fetch from all of Unsplash');
+            const new_image_response = await fetch(API_URL2 + query);
+            const new_image_data = await new_image_response.json();
+            imgStore.setPhotos(new_image_data.results);
+            firstImage = new_image_data?.results[0];
+            debugLog(new_image_data);
+          }
+          if (firstImage) {
+            const response = await fetch(firstImage.urls.regular);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            reader.onload = () => {
+              debugLog('image loads');
+              const dataURL = reader.result as string;
+              //console.log("image loads - "+ dataURL)
+              //dataURL && setImageData(dataURL);
 
-        //return data;
-      } else {
-        // Handle the error response
-        throw new Error('Failed to call ChatGPT API');
+              if (dataURL) {
+                if (isMounted) {
+                  //are we still on this page
+                  if (imgStore.selectedImageURL === '')
+                    imgStore.setPreSelectedImage(
+                      firstImage.id,
+                      firstImage.description,
+                      dataURL,
+                      firstImage.links.download_location
+                    );
+                } else {
+                  //we are on the nxt page
+                  if (imgStore.selectedImageURL === '')
+                    imgStore.setSelectedImage(
+                      firstImage.id,
+                      firstImage.description,
+                      dataURL,
+                      firstImage.links.download_location
+                    );
+                }
+              }
+            };
+            reader.readAsDataURL(blob);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching image:', error);
       }
+
+      //Turn off skeleton on preview and edit page
+      JSONstore.setIsLoading(false);
+
+      if (jsonData?.tweet) return jsonData;
     } catch (error) {
       // Handle any errors that occur during the API call
       console.error('Error calling ChatGPT API:', error);

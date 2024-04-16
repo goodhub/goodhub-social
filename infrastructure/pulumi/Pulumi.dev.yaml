@@ -2,3 +2,5 @@ config:
   azure-native:location: uksouth
   social:database-url:
     secure: AAABAJklLKMslcr3kb9TJNcUacaITfb9jle8Fd/gKR1fLYsB22CxDiwTJgdTFsf/s5oJihG/dFVQ5xBuW8jYbAZX2d1YkIfkSsz1jhN0Xb3P2QXLNLaHfPSaavh4UZoK3uC113VxANPfbZRlPTJ7Z4sHH/eHYpLnhZTxungIFML9rwkCNHvNaCKJ4g==
+  social:openai-key:
+    secure: AAABABV6Am+OeFIieRHpP73XNK/yR8EPmvf7iHc6SCNWuKdzAu/DnchCyRLvRJ+iQipd0PAfXk+fpWn6j0iI3D08xQbZeioAlsr5584F8xaz8/Q=

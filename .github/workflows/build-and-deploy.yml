@@ -65,6 +65,11 @@ jobs:
       - name: Build ui
         run: npm run build
         working-directory: app
+        env:
+          VITE_APP_AUTH_EMAIL: demo@goodhub.org.uk
+          VITE_APP_AUTH_PASSWORD: demo
+          VITE_UNSPLASH_KEY: LFdsh8j4BwoF4wRWCvoaD6dh_LKzVe1Yz75aAN-b-cg
+          VITE_API_URL: https://social-dev-api4af0224d.ambitiousbeach-a2a4ff58.uksouth.azurecontainerapps.io
 
       - name: Publish build artifact
         uses: actions/upload-artifact@v3

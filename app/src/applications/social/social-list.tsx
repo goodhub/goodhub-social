@@ -1,10 +1,9 @@
-import { FC, useState, useEffect } from 'react';
-import { FiCalendar, FiFacebook, FiInstagram, FiLinkedin, FiTwitter, FiGlobe } from 'react-icons/fi';
-import { SiThreads } from 'react-icons/si';
 import { useAuthStore } from '@/layout/Frame';
+import { FiFacebook, FiGlobe, FiInstagram, FiLinkedin, FiTwitter } from 'react-icons/fi';
+import { SiThreads } from 'react-icons/si';
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 
 const SocialList: React.FC = () => {
   const authStore = useAuthStore();

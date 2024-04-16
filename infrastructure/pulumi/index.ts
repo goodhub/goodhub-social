@@ -33,7 +33,8 @@ export = async () => {
 
   const env = {
     PORT: '3000',
-    DATABASE_URL: config.require('database-url')
+    DATABASE_URL: config.require('database-url'),
+    OPEN_AI_API_KEY: config.require('openai-key')
   };
 
   const api = new ContainerApp(`${id}-api`, {

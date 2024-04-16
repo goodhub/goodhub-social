@@ -6,9 +6,11 @@ import cors from 'cors';
 import { router } from './trpc.js';
 
 const { default: Example } = await import('./applications/example/Example.js');
+const { default: AI } = await import('./applications/ai/AI.js');
 
 const routes = router({
-  [Example.id]: Example.router
+  [Example.id]: Example.router,
+  [AI.id]: AI.router
 });
 
 export type AppRouter = typeof routes;

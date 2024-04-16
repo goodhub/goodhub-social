@@ -33,7 +33,7 @@ export const TRPCProvider = () => {
     trpc.createClient({
       links: [
         httpBatchLink({
-          url: 'http://localhost:3001',
+          url: import.meta.env.VITE_API_URL,
           // You can pass any HTTP headers you wish here
           async headers() {
             return {
