@@ -1,15 +1,15 @@
-import { FC, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiList, FiRadio, FiSettings } from 'react-icons/fi';
-import { ApplicationConfig, useApplication } from '../utils';
 import { useAuthStore } from '@/layout/Frame';
+import { FC, useEffect, useState } from 'react';
+import { FiList, FiRadio } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { ApplicationConfig } from '../utils';
 
 // import ImageSearchPage from './components/image-search-page';
-import WhatToPost from './components/what-to-post';
-import PreviewAndEdit from './components/preview-and-edit';
-import WhereAndWhen from './components/where-and-when';
 import PartnerList from './components/partner-list';
+import PreviewAndEdit from './components/preview-and-edit';
 import SocialMediaCompanyList from './components/social-companies-list';
+import WhatToPost from './components/what-to-post';
+import WhereAndWhen from './components/where-and-when';
 import SocialList from './social-list';
 
 import { Button } from '@/components/ui/button';
@@ -23,10 +23,6 @@ interface ImageStore {
   selectedImageDescription: string;
   selectedImageURL: string;
   selectedImageDownloadURL: string;
-  preSelectedImageId: string;
-  preSelectedImageDescription: string;
-  preSelectedImageURL: string;
-  preSelectedImageDownloadURL: string;
   addNewImageToCollection: boolean;
   query: string;
   previousQuery: string;
@@ -43,12 +39,6 @@ interface ImageStore {
     selectedImageURL: string,
     selectedImageDownloadURL: string
   ) => void;
-  setPreSelectedImage: (
-    preSelectedImageId: string,
-    preSelectedImageDescription: string,
-    preSelectedImageURL: string,
-    preSelectedImageDownloadURL: string
-  ) => void;
   removeSelectedImage: () => void;
 }
 
@@ -64,10 +54,6 @@ export const useImageStore = create<ImageStore>(set => ({
       selectedImageDescription: imageDescription,
       selectedImageDownloadURL: imageDownloadURL
     })),
-  preSelectedImageURL: '',
-  preSelectedImageId: '',
-  preSelectedImageDescription: '',
-  preSelectedImageDownloadURL: '',
   addNewImageToCollection: false,
   toggleAddNewImageToCollection: () =>
     set((state: ImageStore) => ({ addNewImageToCollection: !state.addNewImageToCollection })),
@@ -79,13 +65,6 @@ export const useImageStore = create<ImageStore>(set => ({
   setPhotos: photos => set({ photos }),
   allUnsplash: false,
   setAllUnsplash: value => set({ allUnsplash: value }),
-  setPreSelectedImage: (imageId, imageDescription, imageURL, imageDownloadURL) =>
-    set(state => ({
-      preSelectedImageURL: imageURL,
-      preSelectedImageId: imageId,
-      preSelectedImageDescription: imageDescription,
-      preSelectedImageDownloadURL: imageDownloadURL
-    })),
   removeSelectedImage: () =>
     set({
       selectedImageURL: '',

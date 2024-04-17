@@ -1,17 +1,17 @@
-import React, { FC, useState, useEffect, useRef, Component } from 'react';
+import React, { useState } from 'react';
 
-import { useSelectedPartnersStore, useSelectedUIElementsStore, useImageStore, useJsonStore } from '../social-wizard';
-import partnerData from '../base-data/partner-organisations';
 import orgData from '../base-data/organisation';
+import partnerData from '../base-data/partner-organisations';
+import { useImageStore, useJsonStore, useSelectedPartnersStore, useSelectedUIElementsStore } from '../social-wizard';
 import EditableText from './content-editable-ext';
 
-import { toPng, toSvg } from 'html-to-image';
+import { toPng } from 'html-to-image';
 
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { FiAlertTriangle } from 'react-icons/fi';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { FiAlertTriangle } from 'react-icons/fi';
 
 // Iterate over the keys of the partnerData object
 const partnerItems = Object.entries(partnerData).map(([key, value]) => {
@@ -44,10 +44,6 @@ const PreviewAndEdit: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, 
   const imgStore = useImageStore();
   const selectedImageURL = imgStore.selectedImageURL;
   const selectedImageId = imgStore.selectedImageId;
-  const preSelectedImageURL = imgStore.preSelectedImageURL;
-  const preSelectedImageId = imgStore.preSelectedImageId;
-  const preSelectedImageDescription = imgStore.preSelectedImageDescription;
-  const preSelectedImageDownloadURL = imgStore.preSelectedImageDownloadURL;
   const setSelectedImageURL = imgStore.setSelectedImage;
 
   const uiStore = useSelectedUIElementsStore();
@@ -61,25 +57,6 @@ const PreviewAndEdit: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, 
 
   const GPTObject = JSONStore.jsonData;
   const [progress, setProgress] = useState(0);
-
-  //console.log(GPTObject)
-
-  useEffect(() => {
-    // // Function to capture the current state into a previous state variable
-    if (!selectedImageURL) {
-      //set some state to show/hide the we have addded a button markup
-      setSelectedImageURL(
-        preSelectedImageId,
-        preSelectedImageDescription,
-        preSelectedImageURL,
-        preSelectedImageDownloadURL
-      );
-    }
-    // Return a cleanup function if needed
-    return () => {
-      // Perform cleanup here if necessary
-    };
-  }, []); // Empty dependency array ensures the effect runs only once after initial render
 
   const buildPng = async (element: HTMLElement, aspectRatio: number) => {
     let dataUrl = '';

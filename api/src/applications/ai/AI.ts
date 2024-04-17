@@ -52,16 +52,21 @@ export default await App.setup('ai', {
     router({
       // Any routes that need to be exposed
       request: anonymous
-        .input(z.object({ model: z.string(), max_tokens: z.number(), prompt: z.string() }))
+        .input(z.object({ max_tokens: z.number(), prompt: z.string(), input: z.string() }))
         .mutation(async ({ input }) => {
-          const response = await fetch(`https://api.openai.com/v1/completions`, {
+          const response = await fetch(`https://api.openai.com/v1/chat/completions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${env.OPEN_AI_API_KEY}`
             },
             body: JSON.stringify({
-              ...input
+              model: 'gpt-3.5-turbo',
+              response_format: { type: 'json_object' },
+              messages: [
+                { role: 'system', content: input.prompt },
+                { role: 'user', content: input.input }
+              ]
             })
           });
           return response.json();

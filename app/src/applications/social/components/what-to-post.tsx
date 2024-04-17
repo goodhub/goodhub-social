@@ -1,13 +1,7 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 
 import partnerData from '../base-data/partner-organisations';
-import {
-  useImageStore,
-  useJsonStore,
-  useKeyAndURLStore,
-  useSelectedPartnersStore,
-  useSelectedUIElementsStore
-} from '../social-wizard';
+import { useImageStore, useJsonStore, useSelectedPartnersStore, useSelectedUIElementsStore } from '../social-wizard';
 import ImageSearchPage from './image-search-page';
 
 import { useApplication } from '@/applications/utils';
@@ -17,6 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { FiHelpCircle } from 'react-icons/fi';
+import { z } from 'zod';
+import { getCuratedImages } from '../hooks/unsplash';
+
+const parameters = {
+  max_tokens: 500
+};
 
 // Iterate over the keys of the partnerData object
 const partnerItems = Object.entries(partnerData).map(([key, value]) => {
@@ -33,24 +33,36 @@ interface HelperProps {
   setHelperPageIndex: React.Dispatch<React.SetStateAction<number>>;
 }
 
-const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setHelperPageIndex }) => {
-  const imgStore = useImageStore();
-  const keyStore = useKeyAndURLStore();
-  const JSONstore = useJsonStore();
+const AIProcessedPost = z.object({
+  tweet: z.string(),
+  title: z.string(),
+  subtitle: z.string().optional(),
+  image_search_word: z.string().optional(),
+  missing: z.string().optional()
+});
 
-  //is the component mounted or not
-  const [isMounted, setIsMounted] = useState(true);
+function formatDate(date: Date): string {
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+  };
+
+  const formattedDate: string = new Intl.DateTimeFormat('en-US', options).format(date);
+  return formattedDate;
+}
+
+const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setHelperPageIndex }) => {
+  const { setSelectedImage } = useImageStore();
+  const JSONstore = useJsonStore();
 
   const { client } = useApplication('ai');
 
   const getCompletion = client.ai.request.useMutation();
-
-  useEffect(() => {
-    return () => {
-      // Set the flag to false when the component unmounts
-      setIsMounted(false);
-    };
-  }, []);
 
   function debugLog(message: string): void {
     const debugMode: boolean = false; // Set to true to enable logging, false to disable
@@ -61,21 +73,6 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
 
   // Define a function to call the ChatGPT API
   async function callChatGPTAPI(inputText: string) {
-    function formatDate(date: Date): string {
-      const options: Intl.DateTimeFormatOptions = {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true
-      };
-
-      const formattedDate: string = new Intl.DateTimeFormat('en-US', options).format(date);
-      return formattedDate;
-    }
-
     const currentDate: Date = new Date();
     const formattedDate: string = formatDate(currentDate);
 
@@ -123,7 +120,7 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
 
     //   The input text is "${inputText}”.`
 
-    const prompt = `Today's date is ${formattedDate}. I will provide you with some text for our charity's Twitter handle. Please analyze the text to determine if it's about a good news, bad news, a request for help, a position we want to recruit, or an upcoming event. Based on the text type, generate the following:
+    const prompt = `Today's date is ${formattedDate}. The user provide you with some text for our charity's Twitter handle. Please analyze the text to determine if it's about a good news, bad news, a request for help, a position we want to recruit, or an upcoming event. Based on the text type, generate the following:
     
    - a fun social media post of no less than 20 words, ensuring ALL information provided in the original text is included, but within 280 characters. Please DO NOT include hashtags, but you can include emojis.
 
@@ -135,41 +132,7 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
 
    - In addition to the tweet text, title, subtitle and missing data, provide one word in english language to use in an image search.
 
-    Output a valid JSON object with the "tweet", "title", "subtitle", "image_search_word", and "missing" fields. 
-    
-    The input text is "${inputText}”.`;
-
-    // ChatGPT functions
-
-    const apiKey = keyStore.OPENAI_API_KEY;
-    const endpoint = keyStore.OPENAI_CHATGPT_URL;
-
-    // Example parameters
-    const parameters = {
-      model: 'gpt-3.5-turbo-instruct',
-      max_tokens: 500
-    };
-
-    function normalizeJSONStringKeys(jsonString: string): string {
-      const regex = /"([^"]+)"\s*:\s*("[^"]*"|[^,]+),?/g;
-      let result = '{';
-      let match = regex.exec(jsonString);
-      while (match !== null) {
-        const key = match[1] as string;
-        let value = match[2] as string;
-        // Add quotes around the value if it's not already quoted
-        if (!/^["']/.test(value)) {
-          // Escape line breaks within the value
-          value = value.replace(/\n/g, '\\n');
-          value = `"${value.trim()}"`;
-        }
-        result += `"${key.toLowerCase()}": ${value}, `;
-        match = regex.exec(jsonString);
-      }
-      // Remove the trailing comma and add the closing curly brace
-      result = result.replace(/,\s*$/, '') + '}';
-      return result;
-    }
+    Output a valid JSON object with the "tweet", "title", "subtitle", "image_search_word", and "missing" fields.`;
 
     try {
       JSONstore.setIsLoading(true);
@@ -177,118 +140,46 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
       // Parse the response JSON
       const data = await getCompletion.mutateAsync({
         prompt,
+        input: inputText,
         ...parameters
       });
       // Return the response data
       debugLog(data);
-      let jsonData: any;
       // Parse the returned text into a JSON object
       try {
         // Call the useJsonStore hook to access the store and its setter function
-        debugLog('Raw text from the response\n\n' + data.choices[0].text);
+        const text = data.choices[0].message.content;
+        const json = JSON.parse(text);
+        const post = AIProcessedPost.parse(json);
+        debugLog('Raw text from the response\n\n' + text);
 
-        //const text = window.prompt("",data.choices[0].text) as string;
+        const query = post.image_search_word;
+        if (!query) throw new Error('No image search word provided');
 
-        const text = data.choices[0].text;
+        const curated = await getCuratedImages(query);
+        if (curated.total > 0) {
+          const image = curated.results[0];
+          if (!image) throw new Error('No image found but total is greater than 0');
+          const response = await fetch(image.urls.regular);
+          const blob = await response.blob();
+          const reader = new FileReader();
 
-        // Find the index of the first opening curly bracket
-        let startIndex = text.indexOf('{');
-        const needsCurlies = text.indexOf('.') === 0 && startIndex === -1;
-        // Find the index of the last closing curly bracket
-        const endIndex = text.lastIndexOf('}') + 1;
-        debugLog('start - ' + startIndex + ', end - ' + endIndex);
-        // Extract the JSON string if Its a bad request take the middle out
-        const jsonString = needsCurlies ? '{' + text.slice(1, text.length) + '}' : text.slice(startIndex, endIndex);
-        // const jsonString = text.slice(startIndex, endIndex);
-        debugLog(jsonString);
-        // Normalize keys to lowercase in the JSON string
-        const normalizedJSONString = normalizeJSONStringKeys(jsonString);
+          reader.onload = () => {
+            const url = reader.result;
+            if (!url || typeof url !== 'string') throw new Error('No image URL found');
+            setSelectedImage(image.id, image.description ?? '', url, image.links.download_location);
+          };
 
-        if (normalizedJSONString === '{}') {
-          debugLog('FAIL in JSON string - try again');
-          return;
-        } else {
-          // Parse the JSON string into an object
-          try {
-            jsonData = JSON.parse(normalizedJSONString);
-            debugLog('parsed JSONdata - \n\n' + jsonData);
-          } catch (error) {
-            debugLog('Error parsing JSON: - ' + error);
-            //try again if fail and component still mounted
-
-            // Additional logic...
-            //if (isMounted){
-            return;
-          }
+          reader.readAsDataURL(blob);
         }
 
-        const API_URL = keyStore.UNSPLASH_URL_COLLECTION;
-        const API_URL2 = keyStore.UNSPLASH_URL_ALL;
-
-        const query = jsonData?.image_search_word;
-        if (query !== undefined) {
-          imgStore.setQuery(query);
-        }
-        if (imgStore.selectedImageURL === '' && query !== undefined) {
-          //console.log(query)
-          const image_response = await fetch(API_URL + query);
-          const image_data = await image_response.json();
-          imgStore.setPhotos(image_data.results);
-          debugLog(image_data);
-          let firstImage = image_data?.results[0];
-          //do we need to retry?
-          if (!firstImage && query !== undefined) {
-            // Rerun the routine with a different URL
-            debugLog('retry photo fetch from all of Unsplash');
-            const new_image_response = await fetch(API_URL2 + query);
-            const new_image_data = await new_image_response.json();
-            imgStore.setPhotos(new_image_data.results);
-            firstImage = new_image_data?.results[0];
-            debugLog(new_image_data);
-          }
-          if (firstImage) {
-            const response = await fetch(firstImage.urls.regular);
-            const blob = await response.blob();
-            const reader = new FileReader();
-            reader.onload = () => {
-              debugLog('image loads');
-              const dataURL = reader.result as string;
-              //console.log("image loads - "+ dataURL)
-              //dataURL && setImageData(dataURL);
-
-              if (dataURL) {
-                if (isMounted) {
-                  //are we still on this page
-                  if (imgStore.selectedImageURL === '')
-                    imgStore.setPreSelectedImage(
-                      firstImage.id,
-                      firstImage.description,
-                      dataURL,
-                      firstImage.links.download_location
-                    );
-                } else {
-                  //we are on the nxt page
-                  if (imgStore.selectedImageURL === '')
-                    imgStore.setSelectedImage(
-                      firstImage.id,
-                      firstImage.description,
-                      dataURL,
-                      firstImage.links.download_location
-                    );
-                }
-              }
-            };
-            reader.readAsDataURL(blob);
-          }
-        }
+        JSONstore.setIsLoading(false);
+        if (post.tweet) return post;
       } catch (error) {
         console.error('Error fetching image:', error);
       }
 
       //Turn off skeleton on preview and edit page
-      JSONstore.setIsLoading(false);
-
-      if (jsonData?.tweet) return jsonData;
     } catch (error) {
       // Handle any errors that occur during the API call
       console.error('Error calling ChatGPT API:', error);

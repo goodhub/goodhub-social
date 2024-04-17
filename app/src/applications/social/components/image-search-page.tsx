@@ -1,14 +1,15 @@
-import React, { FC, useState, useEffect, KeyboardEvent } from 'react';
+import React, { KeyboardEvent, useState } from 'react';
 
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FiArrowRightCircle, FiSlash } from 'react-icons/fi';
 
-import PhotoGallery from './photo-gallery';
 import ImagePreview from './image-preview';
+import PhotoGallery from './photo-gallery';
 
-import { useImageStore, useJsonStore, useKeyAndURLStore, useSelectedUIElementsStore } from '../social-wizard';
+import { getAllImages, getCuratedImages } from '../hooks/unsplash';
+import { useImageStore, useSelectedUIElementsStore } from '../social-wizard';
 
 interface ImageSearchPageProps {
   mode: 'unsplash' | 'local';
@@ -26,40 +27,38 @@ const ImageSearchPage: React.FC<ImageSearchPageProps> = ({ mode }) => {
   const uiStore = useSelectedUIElementsStore();
   const selectedGPTCB = uiStore.selectedGPTCB;
 
-  const { UNSPLASH_URL_COLLECTION, UNSPLASH_URL_ALL } = useKeyAndURLStore(state => ({
-    UNSPLASH_URL_COLLECTION: state.UNSPLASH_URL_COLLECTION,
-    UNSPLASH_URL_ALL: state.UNSPLASH_URL_ALL
-  }));
-
   const searchPhotos = async () => {
     try {
       setLoading(true);
       setPhotos([]);
-      const response = await fetch(UNSPLASH_URL_COLLECTION + query);
-      const data = await response.json();
-      if (data.results.length === 0) {
-        searchAllPhotos();
-      } else {
-        setPhotos(data.results);
+      setAllUnsplash(false);
+      setLoadingMessage('Searching our curated collection');
+      const curated = await getCuratedImages(query);
+
+      if (curated.total > 0) {
+        setPhotos(curated.results);
         setLoading(false);
+        return;
       }
+      setLoadingMessage('Searching all of Unsplash');
+      const response = await getAllImages(query);
+      setPhotos(response.results);
     } catch (error) {
       console.error('Error searching photos:', error);
-      setLoading(false);
     }
   };
 
   const searchAllPhotos = async () => {
-    setLoading(true);
-    setPhotos([]);
-    setAllUnsplash(true);
-    //we will add the new selectedImage to the collection on done
-    imgStore.toggleAddNewImageToCollection();
-    setLoadingMessage('Searching all of Unsplash');
-    const response2 = await fetch(UNSPLASH_URL_ALL + query);
-    const data2 = await response2.json();
-    setPhotos(data2.results);
-    setLoading(false);
+    try {
+      setLoading(true);
+      setPhotos([]);
+      setAllUnsplash(false);
+      setLoadingMessage('Searching all of Unsplash');
+      const response = await getAllImages(query);
+      setPhotos(response.results);
+    } catch (error) {
+      console.error('Error searching photos:', error);
+    }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,7 +114,9 @@ const ImageSearchPage: React.FC<ImageSearchPageProps> = ({ mode }) => {
   return (
     <>
       <div
-        className={`flex flex-wrap gap-2 md:gap-4 mb-2 md:mb-4 rounded-lg ${mode === 'local' ? 'p-0' : 'bg-slate-200 p-3'}`}
+        className={`flex flex-wrap gap-2 md:gap-4 mb-2 md:mb-4 rounded-lg ${
+          mode === 'local' ? 'p-0' : 'bg-slate-200 p-3'
+        }`}
       >
         <div className="search-bar mb-0 md:mb-2 max-w-80 w-full md:w-2/5 lg:w-2/5">
           {mode === 'unsplash' && (
