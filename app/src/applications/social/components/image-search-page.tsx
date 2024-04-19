@@ -23,9 +23,7 @@ const ImageSearchPage: React.FC<ImageSearchPageProps> = ({ mode }) => {
   const [loadingMessage, setLoadingMessage] = useState<string>('Searching our curated collection');
 
   const selectedImageURL = imgStore.selectedImageURL;
-
-  const uiStore = useSelectedUIElementsStore();
-  const selectedGPTCB = uiStore.selectedGPTCB;
+  const useGPT = useSelectedUIElementsStore(state => state.useGPT);
 
   const searchPhotos = async () => {
     try {
@@ -171,7 +169,7 @@ const ImageSearchPage: React.FC<ImageSearchPageProps> = ({ mode }) => {
           <ImagePreview selectedImageURL={selectedImageURL} />
         ) : (
           <div className="text-slate-500 text-sm md:text-lg italic ">
-            {selectedGPTCB && (
+            {useGPT && (
               <span>
                 Don't worry if you don't have an image, we will 'magic' one&#127775;. Just remember its much better to
                 have your own photos.

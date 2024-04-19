@@ -110,25 +110,26 @@ setUnsplashURLs(useKeyAndURLStore.getState().UNSPLASH_API_KEY);
 
 /* selected UI elements store */
 interface SelectedUIElementsStore {
-  selectedGPTCB: boolean;
-  selectedTitleCB: boolean;
-  selectedLogoCB: boolean;
-  selectedPartnerCB: boolean;
-  toggleGPTCB: () => void;
-  toggleTitleCB: () => void;
-  toggleLogoCB: () => void;
-  togglePartnerCB: () => void;
+  useGPT: boolean;
+  showTitleAndDescription: boolean;
+  showLogo: boolean;
+  showPartners: boolean;
+  toggleUseGPT: () => void;
+  toggleShowTitleAndDescription: () => void;
+  toggleShowLogo: () => void;
+  toggleShowPartners: () => void;
 }
 
 export const useSelectedUIElementsStore = create<SelectedUIElementsStore>(set => ({
-  selectedGPTCB: true,
-  selectedTitleCB: true,
-  selectedLogoCB: true,
-  selectedPartnerCB: true,
-  toggleGPTCB: () => set((state: SelectedUIElementsStore) => ({ selectedGPTCB: !state.selectedGPTCB })),
-  toggleTitleCB: () => set((state: SelectedUIElementsStore) => ({ selectedTitleCB: !state.selectedTitleCB })),
-  toggleLogoCB: () => set((state: SelectedUIElementsStore) => ({ selectedLogoCB: !state.selectedLogoCB })),
-  togglePartnerCB: () => set((state: SelectedUIElementsStore) => ({ selectedPartnerCB: !state.selectedPartnerCB }))
+  useGPT: true,
+  showTitleAndDescription: true,
+  showLogo: true,
+  showPartners: true,
+  toggleUseGPT: () => set((state: SelectedUIElementsStore) => ({ useGPT: !state.useGPT })),
+  toggleShowTitleAndDescription: () =>
+    set((state: SelectedUIElementsStore) => ({ showTitleAndDescription: !state.showTitleAndDescription })),
+  toggleShowLogo: () => set((state: SelectedUIElementsStore) => ({ showLogo: !state.showLogo })),
+  toggleShowPartners: () => set((state: SelectedUIElementsStore) => ({ showPartners: !state.showPartners }))
 }));
 
 /* selected partner Store */
@@ -241,8 +242,6 @@ export const useJsonStore = create<JsonStoreState>(set => ({
 
 const SocialWizard: FC = () => {
   const navigate = useNavigate();
-
-  //const PStore = useSelectedPartnersStore;
 
   const imgStore = useImageStore();
   const partnerStore = useSelectedPartnersStore();
