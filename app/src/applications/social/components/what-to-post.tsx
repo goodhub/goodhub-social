@@ -44,7 +44,7 @@ function formatDate(date: Date): string {
 }
 
 const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setHelperPageIndex }) => {
-  const { setSelectedImage, setPhotos, setQuery } = useImageStore();
+  const { setSelectedImage, setPhotos, setQuery, setAllUnsplash } = useImageStore();
   const { jsonData, setJsonData, setIsLoading } = useJsonStore(state => ({
     jsonData: state.jsonData,
     setJsonData: state.setJsonData,
@@ -116,6 +116,10 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
       if (response.image) {
         setPhotos(response.image.results);
         setQuery(response.image.query);
+
+        if (response.image.expandedSearch) {
+          setAllUnsplash(true);
+        }
 
         setSelectedImage(
           response.image.unsplash.id,
