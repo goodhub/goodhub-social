@@ -47,10 +47,10 @@ const PreviewAndEdit: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, 
   const setSelectedImageURL = imgStore.setSelectedImage;
 
   const uiStore = useSelectedUIElementsStore();
-  const useTitle = uiStore.selectedTitleCB;
-  const useLogo = uiStore.selectedLogoCB;
-  const usePartnerLogos = uiStore.selectedPartnerCB;
-  const useGPT = uiStore.selectedGPTCB;
+  const useTitle = uiStore.showTitleAndDescription;
+  const useLogo = uiStore.showLogo;
+  const usePartnerLogos = uiStore.showPartners;
+  const useGPT = uiStore.useGPT;
 
   const JSONStore = useJsonStore();
   const setJsonData = JSONStore.setJsonData;

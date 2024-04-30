@@ -4,19 +4,14 @@ import partnerData from '../base-data/partner-organisations';
 import { useImageStore, useJsonStore, useSelectedPartnersStore, useSelectedUIElementsStore } from '../social-wizard';
 import ImageSearchPage from './image-search-page';
 
-import { useApplication } from '@/applications/utils';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { FiHelpCircle } from 'react-icons/fi';
-import { z } from 'zod';
-import { getCuratedImages } from '../hooks/unsplash';
-
-const parameters = {
-  max_tokens: 500
-};
+import { AIProcessedPost, useSummarizePost } from '../hooks/ai';
+import { UnsplashAPIResult, loadImage, searchForImages } from '../hooks/unsplash';
 
 // Iterate over the keys of the partnerData object
 const partnerItems = Object.entries(partnerData).map(([key, value]) => {
@@ -32,14 +27,6 @@ interface HelperProps {
   setIsWizardMode: React.Dispatch<React.SetStateAction<boolean>>;
   setHelperPageIndex: React.Dispatch<React.SetStateAction<number>>;
 }
-
-const AIProcessedPost = z.object({
-  tweet: z.string(),
-  title: z.string(),
-  subtitle: z.string().optional(),
-  image_search_word: z.string().optional(),
-  missing: z.string().optional()
-});
 
 function formatDate(date: Date): string {
   const options: Intl.DateTimeFormatOptions = {
@@ -57,138 +44,42 @@ function formatDate(date: Date): string {
 }
 
 const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setHelperPageIndex }) => {
-  const { setSelectedImage } = useImageStore();
-  const JSONstore = useJsonStore();
-
-  const { client } = useApplication('ai');
-
-  const getCompletion = client.ai.request.useMutation();
-
-  function debugLog(message: string): void {
-    const debugMode: boolean = false; // Set to true to enable logging, false to disable
-    if (debugMode) {
-      console.log(message);
-    }
-  }
+  const { setSelectedImage, setPhotos, setQuery, setAllUnsplash } = useImageStore();
+  const { jsonData, setJsonData, setIsLoading } = useJsonStore(state => ({
+    jsonData: state.jsonData,
+    setJsonData: state.setJsonData,
+    setIsLoading: state.setIsLoading
+  }));
+  const summarizePost = useSummarizePost();
 
   // Define a function to call the ChatGPT API
-  async function callChatGPTAPI(inputText: string) {
-    const currentDate: Date = new Date();
-    const formattedDate: string = formatDate(currentDate);
-
-    // Example input prompt
-    //const prompt = `Today is ${formattedDate}. Write me a 280 character tweet in a fun tone for my charity twitter handle about "${inputText}". Please output in the same language as it is input. Do not miss out of the tweet any relevant information, even if it makes the text longer. Generate a post title of less than 6 words (including the word free if the event is free), a subtitle of less than 18 words (including day and month, time and location if available) and ONLY ONE word to search for an image with from that tweet. Send me back ONLY a srtictly valid JSON object, with the "tweet", "title", "subtitle" and then the "date" and "time" and "venue" and "contact" and "image_search_word" if available`;
-    //const prompt = `Today's date is ${formattedDate}. Please write a fun tweet for our charity's Twitter handle about "${inputText}". Keep it to 280 characters. Provide a catchy title (less than 6 words, including 'free' if applicable), a brief subtitle (less than 18 words, including day, month, time, and location), and ONE word for image search. Output a valid JSON object with the "tweet", "title", "subtitle", and "image_search_word".`
-    // const prompt = `Today's date is ${formattedDate}. At the end of this prompt, I'll provide you with some text for our charity's Twitter handle. Write a fun tweet about it, keeping it within 280 characters. Ensure all provided information is included in the tweet. Write the tweet in the same language as the original text.
-
-    // If the text is about some good news, an ask for help, or a position we want to recruit, include a catchy title (less than 6 words, including 'free' if applicable) and a brief subtitle (less than 18 words).
-
-    // If you think the text is about an upcoming event, it's vitally important that you check if the text does not include information like date, time and location about the event.
-
-    // If the text mentions an event but doesn't specify a date, or a time, or a location for the event, indicate that date, time or location is missing in the "missing" field of the output JSON.
-
-    // If the text is about an upcoming event, include a catchy title and a brief subtitle. If the event has a specified date, time, or location included in the text, include them in the subtitle. Please DO NOT put a date, time or location if it wasn't included in the text.
-
-    // Output a valid JSON object with the "tweet", "title", "subtitle", "image_search_word", and "missing" fields. If no information is missing, leave the "missing" field blank.
-
-    // The input text is "${inputText}".`
-    //`Today's date is ${formattedDate}. At the end of this prompt I am going to give you some text that we want you to write a fun tweet for our charity's Twitter handle about.” It could be some good news, an ask for help, a position we want to recruit or an upcoming event. Keep it to 280 characters, but make sure all information provided in the original text is contained within the tweet. Please write the tweet in the same language as it is written in. Provide also in the language it was written in, a catchy title (less than 6 words, including 'free' if applicable), a brief subtitle (less than 18 words, and if its an event include day, month, time, and location), and ONE word for image search. Output a valid JSON object with the "tweet", "title", "subtitle", and "image_search_word". The text is "${inputText}"`
-    //`Today's date is ${formattedDate}. At the end of this prompt I am going to give you some text that we want you to write a fun tweet for our charity's Twitter handle about.” It could be some good news, an ask for help, a position we want to recruit or an upcoming event. Keep it to 280 characters, but make sure all information provided in the original text is contained within the tweet. Please write the tweet in the same language as it is written in. Provide a catchy title (less than 6 words, including 'free' if applicable), a brief subtitle (less than 18 words, and if its an event include day, month, time, and location), and ONE word for image search. Output a valid JSON object with the "tweet", "title", "subtitle", and "image_search_word". The text is "${inputText}"`;
-
-    //   const prompt = `Today's date is ${formattedDate}. I will provide you with some text for our charity's Twitter handle. Please analyze the text to determine if it's about a good news, a request for help, a position we want to recruit, or an upcoming event. Based on the text type, generate the following:
-
-    //  - a suitable tweet of no less than 20 words, ensuring all information provided in the original text is included but within 280 characters.
-
-    //  - In addition to the tweet text, if the original text is about some good news, a request for help, or a recruitment position, provide a catchy title (less than 6 words) and a brief subtitle (less than 18 words).
-
-    //  - In addition to the tweet text, if the original text is about an upcoming event, provide a catchy title (less than 6 words, including 'free' if applicable) and a brief subtitle (less than 18 words).
-
-    //  - In addition, if the original text is about an upcoming event, please analyze the original text to check there is a date, a time and a location.
-
-    //   Some examples of missing data for an upcoming event are:
-    //   "Join us for a fun day!" (missing date, time, and location),
-    //   "Basketball competition at Meadows Community centre" (missing date and time),
-    //   "Free bbq on Monday. Proceeds go to Meadows Foodbank" (missing time and location),
-    //   "We are available at 2pm for employment help" (missing date and location),
-    //   "Park run at Embankment Recreation Ground next Saturday" (missing time),
-    //   "Join us at 10am on March 22nd for our fun drumming workshop" (missing location),
-    //   "Drumming workshop for kids every Friday in June at AMC Gardens" (missing date).
-
-    //   - In addition to the tweet text, title, subtitle and missing data, provide one word in english language to use in an image search
-
-    //   Output a valid JSON object with the "tweet", "title", "subtitle", "image_search_word", and "missing" fields.
-
-    //   The input text is "${inputText}”.`
-
-    const prompt = `Today's date is ${formattedDate}. The user provide you with some text for our charity's Twitter handle. Please analyze the text to determine if it's about a good news, bad news, a request for help, a position we want to recruit, or an upcoming event. Based on the text type, generate the following:
-    
-   - a fun social media post of no less than 20 words, ensuring ALL information provided in the original text is included, but within 280 characters. Please DO NOT include hashtags, but you can include emojis.
-
-   - In addition to the tweet text, if the original text is about some good news, a request for help, or a recruitment position, provide a catchy title (less than 6 words) and a brief subtitle (less than 18 words). 
-
-   - In addition to the tweet text, if the original text is about an upcoming event, provide a catchy title (less than 6 words, including 'free' if applicable) and a brief subtitle of less than 18 words (including day and month, time and location if available). Please DO NOT include any date, time, or location if not provided in the original text.
-
-   - In addition, if the original text is about an upcoming event, please set the "missing" field in the JSON output to "event". 
-
-   - In addition to the tweet text, title, subtitle and missing data, provide one word in english language to use in an image search.
-
-    Output a valid JSON object with the "tweet", "title", "subtitle", "image_search_word", and "missing" fields.`;
-
+  async function summarizePostAndGetImage(input: string): Promise<{
+    post: AIProcessedPost;
+    image?: {
+      unsplash: UnsplashAPIResult;
+      url: string;
+      results: UnsplashAPIResult[];
+      expandedSearch: boolean;
+      query: string;
+    };
+  }> {
+    // I'm trying to keep any setting of state outside of this function
+    // so we're returning the data and handling it in the component
     try {
-      JSONstore.setIsLoading(true);
-      // Check if the response is successful
-      // Parse the response JSON
-      const data = await getCompletion.mutateAsync({
-        prompt,
-        input: inputText,
-        ...parameters
-      });
-      // Return the response data
-      debugLog(data);
-      // Parse the returned text into a JSON object
-      try {
-        // Call the useJsonStore hook to access the store and its setter function
-        const text = data.choices[0].message.content;
-        const json = JSON.parse(text);
-        const post = AIProcessedPost.parse(json);
-        debugLog('Raw text from the response\n\n' + text);
+      const post = await summarizePost.mutateAsync({ input });
+      const query = post.image_search_word;
+      if (!query) return { post };
 
-        const query = post.image_search_word;
-        if (!query) throw new Error('No image search word provided');
-
-        const curated = await getCuratedImages(query);
-        if (curated.total > 0) {
-          const image = curated.results[0];
-          if (!image) throw new Error('No image found but total is greater than 0');
-          const response = await fetch(image.urls.regular);
-          const blob = await response.blob();
-          const reader = new FileReader();
-
-          reader.onload = () => {
-            const url = reader.result;
-            if (!url || typeof url !== 'string') throw new Error('No image URL found');
-            setSelectedImage(image.id, image.description ?? '', url, image.links.download_location);
-          };
-
-          reader.readAsDataURL(blob);
-        }
-
-        JSONstore.setIsLoading(false);
-        if (post.tweet) return post;
-      } catch (error) {
-        console.error('Error fetching image:', error);
-      }
-
-      //Turn off skeleton on preview and edit page
+      const [unsplash, expandedSearch] = await searchForImages(query);
+      const image = unsplash.results[0];
+      if (!image) throw new Error('No image found but total is greater than 0');
+      const url = await loadImage(image.urls.regular);
+      return { post, image: { unsplash: image, url, results: unsplash.results, expandedSearch, query } };
     } catch (error) {
-      // Handle any errors that occur during the API call
-      console.error('Error calling ChatGPT API:', error);
-      // You can choose to throw the error or return null, depending on your needs
+      console.error('Error summarizing post and getting image:', error);
       throw error;
     }
   }
-
-  const setJsonData = useJsonStore(state => state.setJsonData);
 
   const toggleWizardMode = () => {
     setIsWizardMode(!isWizardMode);
@@ -205,57 +96,60 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
   const { originalText, setOriginalText } = useJsonStore();
 
   /* text area functions */
-  const handleBlur = async (event: ChangeEvent<HTMLTextAreaElement>) => {
-    const passedText = event.target.value;
+  const handleBlur = async () => {
     //Do we only do one request, or have an option to re-generate?
-    if (JSONstore.jsonData.tweet !== '') return;
-    setPrevText(passedText);
-    if (passedText !== '' && passedText !== prevText) {
-      //console.log('Textarea blurred ' + event.target.value);
-      // Additional logic...
-      if (selectedGPTCB) {
-        let response = await callChatGPTAPI(event.target.value);
-        if (response) {
-          //failed
-          console.log('Succesfully returned object before set - ' + response);
-          if (response) setJsonData(response);
-        } else {
-          //try again
-          response = await callChatGPTAPI(event.target.value);
-          if (response) setJsonData(response);
-        }
-      } else {
-        setJsonData({ tweet: event.target.value });
+    if (jsonData.tweet !== '') return;
+    setPrevText(originalText);
+    if (originalText !== '' && originalText !== prevText) {
+      // If the user doesn't want to use the AI, don't call the API
+      // and just set the text to the original text
+      if (!useGPT) {
+        setJsonData({ tweet: originalText });
       }
+
+      // If the user wants to use the AI, call the API
+      setIsLoading(true);
+      const response = await summarizePostAndGetImage(originalText);
+      setJsonData(response.post);
+
+      // If the response has an image, set the image data
+      if (response.image) {
+        setPhotos(response.image.results);
+        setQuery(response.image.query);
+
+        if (response.image.expandedSearch) {
+          setAllUnsplash(true);
+        }
+
+        setSelectedImage(
+          response.image.unsplash.id,
+          response.image.unsplash.description ?? '',
+          response.image.url,
+          response.image.unsplash.links.download_location
+        );
+      }
+      setIsLoading(false);
     }
   };
 
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    const passedText = event.target.value;
-    if (passedText !== '' && passedText !== prevText) {
-      setOriginalText(passedText);
-    }
+    setOriginalText(event.target.value);
   };
   /* end */
 
-  // Use chatGPT checkbox
-  const selectedGPTCB = useSelectedUIElementsStore(state => state.selectedGPTCB);
-  const toggleGPTCB = useSelectedUIElementsStore(state => state.toggleGPTCB);
+  const [useGPT, toggleUseGPT] = useSelectedUIElementsStore(state => [state.useGPT, state.toggleUseGPT]);
+  const [showTitleAndDescription, toggleShowTitleAndDescription] = useSelectedUIElementsStore(state => [
+    state.showTitleAndDescription,
+    state.toggleShowTitleAndDescription
+  ]);
+  const [showLogo, toggleShowLogo] = useSelectedUIElementsStore(state => [state.showLogo, state.toggleShowLogo]);
 
-  //use logo checkbox
-  const selectedTitleCB = useSelectedUIElementsStore(state => state.selectedTitleCB);
-  const toggleTitleCB = useSelectedUIElementsStore(state => state.toggleTitleCB);
+  const [showPartners, toggleShowPartners] = useSelectedUIElementsStore(state => [
+    state.showPartners,
+    state.toggleShowPartners
+  ]);
 
-  //use logo checkbox
-  const selectedLogoCB = useSelectedUIElementsStore(state => state.selectedLogoCB);
-  const toggleLogoCB = useSelectedUIElementsStore(state => state.toggleLogoCB);
-
-  //use partners checkbox
-  const selectedPartnerCB = useSelectedUIElementsStore(state => state.selectedPartnerCB);
-  const togglePartnerCB = useSelectedUIElementsStore(state => state.togglePartnerCB);
-
-  const store = useSelectedPartnersStore();
-  const selectedPartners: string[] = store.selectedPartners;
+  const selectedPartners = useSelectedPartnersStore(state => state.selectedPartners);
 
   // Assuming `partnerItems` is accessible here
   // Match keys in `selectedPartners` with `partnerItems` to get descriptions
@@ -271,9 +165,9 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
 
   return (
     <div className="md:text-lg">
-      <div className="flex my-2 w-full items-center justify-start md:justify-start items-center">
+      <div className="flex my-2 w-full items-center justify-start md:justify-start">
         <div>
-          <Checkbox id="auto-produce-text" className="mr-2" checked={selectedGPTCB} onClick={toggleGPTCB} />
+          <Checkbox id="auto-produce-text" className="mr-2" checked={useGPT} onClick={toggleUseGPT} />
           <Label htmlFor="auto-produce-text" className="md:text-lg whitespace-nowrap mr-1.5">
             Automatically help me with my post
           </Label>
@@ -302,7 +196,12 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
       <Separator className="my-4" />
       <div className="flex my-2 w-full justify-between md:justify-start items-center">
         <div>
-          <Checkbox id="include-title" className="mr-2" checked={selectedTitleCB} onClick={toggleTitleCB} />
+          <Checkbox
+            id="include-title"
+            className="mr-2"
+            checked={showTitleAndDescription}
+            onClick={toggleShowTitleAndDescription}
+          />
           <Label htmlFor="include-title" className="md:text-lg whitespace-nowrap">
             Include title and subtitle
           </Label>
@@ -314,7 +213,7 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
       </div>
       <div className="flex my-2 w-full justify-between md:justify-start items-center">
         <div>
-          <Checkbox id="include-logo" className="mr-2" checked={selectedLogoCB} onClick={toggleLogoCB} />
+          <Checkbox id="include-logo" className="mr-2" checked={showLogo} onClick={toggleShowLogo} />
           <Label htmlFor="include-logo" className="md:text-lg whitespace-nowrap">
             Include your logo
           </Label>
@@ -326,7 +225,7 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
       </div>
       <div className="flex mt-2 w-full justify-between md:justify-start items-center">
         <div>
-          <Checkbox id="include-partner-logo" className="mr-2" checked={selectedPartnerCB} onClick={togglePartnerCB} />
+          <Checkbox id="include-partner-logo" className="mr-2" checked={showPartners} onClick={toggleShowPartners} />
           <Label htmlFor="include-partner-logo" className=" md:text-lg whitespace-nowrap">
             Include partner logos
           </Label>
