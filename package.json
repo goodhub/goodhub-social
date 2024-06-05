@@ -17,6 +17,7 @@
     "concurrently": "^8.2.2"
   },
   "dependencies": {
+    "dedent": "^1.5.3",
     "html-to-image": "^1.11.11",
     "react-contenteditable": "^3.3.7",
     "sanitize-html": "^2.12.1",

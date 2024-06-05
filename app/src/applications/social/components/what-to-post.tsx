@@ -116,7 +116,6 @@ const WhatToPost: React.FC<HelperProps> = ({ isWizardMode, setIsWizardMode, setH
       if (response.image) {
         setPhotos(response.image.results);
         setQuery(response.image.query);
-
         if (response.image.expandedSearch) {
           setAllUnsplash(true);
         }

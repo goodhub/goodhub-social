@@ -32,7 +32,6 @@ const ImageSearchPage: React.FC<ImageSearchPageProps> = ({ mode }) => {
       setAllUnsplash(false);
       setLoadingMessage('Searching our curated collection');
       const curated = await getCuratedImages(query);
-
       if (curated.total > 0) {
         setPhotos(curated.results);
         setLoading(false);
@@ -40,6 +39,7 @@ const ImageSearchPage: React.FC<ImageSearchPageProps> = ({ mode }) => {
       }
       setLoadingMessage('Searching all of Unsplash');
       const response = await getAllImages(query);
+      setAllUnsplash(true);
       setPhotos(response.results);
     } catch (error) {
       console.error('Error searching photos:', error);
@@ -50,7 +50,7 @@ const ImageSearchPage: React.FC<ImageSearchPageProps> = ({ mode }) => {
     try {
       setLoading(true);
       setPhotos([]);
-      setAllUnsplash(false);
+      setAllUnsplash(true);
       setLoadingMessage('Searching all of Unsplash');
       const response = await getAllImages(query);
       setPhotos(response.results);

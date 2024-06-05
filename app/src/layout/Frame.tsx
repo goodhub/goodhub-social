@@ -5,6 +5,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { NavigationObject } from '../applications/utils';
 import { create } from 'zustand';
 import { Applications } from '../App';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 interface AuthStore {
   AUTH_EMAIL: string;
@@ -75,6 +76,7 @@ export const Frame: FC<FrameProps> = ({ navigation }) => {
   const title = <React.Fragment>{titleFragments}</React.Fragment>;
 
   return (
+    <TooltipProvider>
     <main className="w-screen min-h-screen flex flex-col bg-gray-50">
       <header className="bg-[#438959] fixed w-full z-10">
         <div className="w-full max-w-7xl mx-auto py-2 px-3 md:py-4 md:px-6 text-white flex justify-between items-center">
@@ -198,6 +200,7 @@ export const Frame: FC<FrameProps> = ({ navigation }) => {
         </div>
       </div>
     </main>
+    </TooltipProvider>
   );
 };
 
