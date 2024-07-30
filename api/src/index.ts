@@ -7,10 +7,12 @@ import { router } from './trpc.js';
 
 const { default: Example } = await import('./applications/example/Example.js');
 const { default: AI } = await import('./applications/ai/AI.js');
+const { default: Social } = await import('./applications/social/Social.js');
 
 const routes = router({
   [Example.id]: Example.router,
-  [AI.id]: AI.router
+  [AI.id]: AI.router,
+  [Social.id]: Social.router
 });
 
 export type AppRouter = typeof routes;

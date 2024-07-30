@@ -3,11 +3,12 @@ import { TRPCProvider } from './applications/utils';
 import { Frame } from './layout/Frame';
 
 import example from './applications/example/Example';
-import website from './applications/website/Website';
-import socialWizard from './applications/social/social-wizard';
 import Home from './applications/home';
+import socialBasic from './applications/social-basic/Social';
+import socialWizard from './applications/social/social-wizard';
+import website from './applications/website/Website';
 
-export const Applications = [example, website, socialWizard];
+export const Applications = [example, website, socialWizard, socialBasic];
 
 const ApplicationRouteManager = () => {
   const navigation = Applications.flatMap(app => app.navigation);

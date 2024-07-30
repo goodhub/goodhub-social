@@ -4,10 +4,17 @@ import { ApplicationConfig, useApplication } from '../utils';
 
 const Example: FC = () => {
   const { user, client } = useApplication('example');
-  const [info] = client.example.info.useSuspenseQuery({ userId: user.id });
 
+  const submitImage = client.example.image.useMutation();
   const echo = client.example.echo.useMutation();
+
+  const [info] = client.example.info.useSuspenseQuery({ userId: user.id });
   const [color] = client.example.color.useSuspenseQuery({ userId: user.id, shade: 'dark' });
+
+  const submit = async () => {
+    const response = await echo.mutateAsync({ message: 'Hello world!' });
+    console.log(response);
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -15,6 +22,7 @@ const Example: FC = () => {
       <div className="p-6 flex flex-col justify-center gap-4">
         <p>{info.description}</p>
         <button onClick={() => echo.mutate({ message: 'Hello world!' })}>{color.color}</button>
+        <button onClick={() => submit()}>Submit image</button>
       </div>
     </div>
   );
